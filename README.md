@@ -11,7 +11,7 @@
 ![pyver](https://img.shields.io/badge/python-3.7%203.8%203.9%203.10-red)
 ![codestyle](https://img.shields.io/badge/code%20style-yapf-lightgrey)
 
-## Installation
+## 🛠️ Installation
 
 ```python
 pip install kernex

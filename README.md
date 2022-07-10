@@ -1,5 +1,7 @@
 
 ![Tests](https://github.com/ASEM000/kernex/actions/workflows/tests.yml/badge.svg)
+![pyver](https://img.shields.io/badge/python-3.8%203.9%203.10-red)
+
 
 <div align = "center">
 

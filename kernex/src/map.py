@@ -81,7 +81,8 @@ class offsetKernelMap(kernelMap):
         super().__init__(func_dict, shape, kernel_size, strides,
                          offset_to_padding(offset, kernel_size), relative)
 
-    @functools.cached_property
+    # @functools.cached_property
+    @property
     def set_indices(self):
         return tuple(
             jnp.arange(x0, di - xf, si) for di, ki, si, (x0, xf) in ZIP(

@@ -127,15 +127,6 @@ def vbox(*text):
         ├───┤
         │a  │
         └───┘
-        
-        >> vbox("a","","a",header=True)
-        ┏━━━┓
-        ┃a  ┃
-        ┡━━━┩
-        │   │
-        ├───┤
-        │a  │
-        └───┘
     """
 
     max_width = max(

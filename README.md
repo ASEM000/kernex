@@ -1,13 +1,20 @@
-![Tests](https://github.com/ASEM000/kernex/actions/workflows/tests.yml/badge.svg)
-![pyver](https://img.shields.io/badge/python-3.7%203.8%203.9%203.10-red)
+
+
 
 <div align = "center">
-
 <img  width=300px src="assets/kernexlogo.svg" align="center">
-
 </div>
 
 <h2 align="center">Differentiable Stencil computations in JAX </h2>
+
+![Tests](https://github.com/ASEM000/kernex/actions/workflows/tests.yml/badge.svg)
+![pyver](https://img.shields.io/badge/python-3.7%203.8%203.9%203.10-red)
+
+## Installation
+
+```python
+pip install kernex
+```
 
 ## Description
 

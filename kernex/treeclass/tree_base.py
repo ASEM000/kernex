@@ -93,7 +93,8 @@ class treeBase:
             object.__setattr__(newCls, k, v)
         return newCls
 
-    @functools.cached_property
+    # @functools.cached_property
+    @property
     def treeclass_leaves(self):
         return jax.tree_util.tree_leaves(self, is_treeclass_leaf)
 

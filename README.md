@@ -17,13 +17,14 @@
 pip install kernex
 ```
 
-## Description
+## 📖  Description
 
 1. Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general stencil computations.
 2. Kernex provides a JAX compatible `dataclass` like datastructure with the following functionalities - Create PyTorch like NN classes like
    [equinox](https://github.com/patrick-kidger/equinox) and [Treex](https://github.com/cgarciae/treex) - Provides Keras-like `model.summary()` and `plot_model` visualizations for pytrees wrapped with `treeclass`. - Apply math/numpy operations like [tree-math](https://github.com/google/tree-math) - Registering user-defined reduce operations on each class. - Some fancy indexing syntax functionalities like `x[x>0]` on pytrees
 
-## `kmap` Examples
+## 🔢 Examples
+### `kmap`
 
 <details>
 <summary>Convolution operation</summary>
@@ -189,7 +190,7 @@ print(dFdx(array))
 
 </details>
 
-## `kscan` Examples
+### `kscan` 
 
 <details>
 <summary>Linear convection </summary>
@@ -252,11 +253,11 @@ for line in kx_solution[::20]:
 
 ```
 
-![image](https://i.imgur.com/s0H7rw1.png)
+![image](assets/linearconvection.png)
 
 </details>
 
-## `treeclass` Examples
+### `treeclass`
 
 <details><summary>Write PyTorch like NN classes</summary>
 
@@ -324,7 +325,7 @@ plt.legend()
 
 ```
 
-![image](https://i.imgur.com/vOKTLcD.png)
+![image](assets/linearconvection.png)
 
 </details>
 
@@ -458,7 +459,7 @@ assert C.reduce_product() == 60000
 
 </details>
 
-## `kmap` + `treeclass` = Pytorch-like Layers
+### `kmap` + `treeclass` = Pytorch-like Layers
 
 <details>
 
@@ -552,7 +553,7 @@ img = Image.open(os.path.join('assets','puppy.png'))
 >>> img
 ```
 
-![image](https://i.imgur.com/FrmBZm8.png)
+![image](assets/puppy.png)
 
 ```python
 batch_img = jnp.einsum('HWC->CHW' ,jnp.array(img))[None] # make it channel first and add batch dim
@@ -564,7 +565,7 @@ plt.figure(figsize=(20,20))
 plt.imshow(blurred_image)
 ```
 
-![image](https://i.imgur.com/KSy42Nf.png)
+![image](assets/blurpuppy.png)
 
 </details>
 
@@ -627,10 +628,9 @@ class Conv2D:
 ```
 
 </details>
-
 <!-- ### Combining everything together -->
 
-## Benchmarking
+## ⌛ Benchmarking
 
 <details><summary>Benchmarking</summary>
 

@@ -253,7 +253,7 @@ for line in kx_solution[::20]:
 
 ```
 
-![image](assets/regression_example.png)
+![image](assets/linearconvection.png)
 
 </details>
 
@@ -325,7 +325,7 @@ plt.legend()
 
 ```
 
-![image](assets/linearconvection.png)
+![image](assets/regression_example.png)
 
 </details>
 

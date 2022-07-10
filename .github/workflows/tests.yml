@@ -28,5 +28,5 @@ jobs:
           python -m pip install .
           python -m pytest tests
 
-      - name: Trunk Check
-        uses: trunk-io/trunk-action@v1.0.3
+      # - name: Trunk Check
+      #   uses: trunk-io/trunk-action@v1.0.3

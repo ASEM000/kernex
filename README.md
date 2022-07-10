@@ -1,4 +1,5 @@
 
+![Tests](https://github.com/ASEM000/kernex/blob/workflows/.github/workflows/tests.yml/badge.svg)
 
 <div align = "center">
 
@@ -34,7 +35,7 @@ import jax
 import jax.numpy as jnp 
 import kernex
 from kernex import treeclass
-import numpy as np 
+import numpy as np  
 import matplotlib.pyplot as plt
 
 @jax.jit

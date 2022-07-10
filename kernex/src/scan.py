@@ -93,7 +93,8 @@ class offsetKernelScan(kernelScan):
             relative,
         )
 
-    @functools.cached_property
+    # @functools.cached_property
+    @property
     def __set_indices__(self):
         return tuple(
             jnp.arange(x0, di - xf, si) for di, ki, si, (x0, xf) in ZIP(

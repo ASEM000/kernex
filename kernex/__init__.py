@@ -9,6 +9,7 @@ from .src.map import (  # trunk-ignore(flake8/F401)
 from .src.scan import (  # trunk-ignore(flake8/F401)
     baseKernelScan, kernelScan, offsetKernelScan,
 )
+
 from .treeclass import viz  # tree_box as plot_model , tree_diagram , summary # trunk-ignore(flake8/F401)
 from .treeclass.decorator import static_field, treeclass  # trunk-ignore(flake8/F401)
 

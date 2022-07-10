@@ -3,7 +3,6 @@
 **/.ipynb_checkpoints
 **/.DS_Store
 *.Icon
-.trunk
 examples
 tensorboard
 experimental

@@ -1,0 +1,10 @@
+*.pyc
+**/__pycache__
+**/.ipynb_checkpoints
+**/.DS_Store
+*.Icon
+examples
+tensorboard
+experimental
+tests/test_nn.py
+

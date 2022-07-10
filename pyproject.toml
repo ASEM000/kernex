@@ -4,21 +4,4 @@ requires = ["setuptools>=42.0","wheel"]
 build-backend = "setuptools.build_meta"
 
 
-[tool.pytest.ini_options]
-
-addopts = "--cov=kernex"
-testpaths =[
-    "tests"
-]
-
-[tool.mypy]
-mypy_path = "kernex"
-check_untyped_defs = true 
-disallow_any_generics = true
-ignore_missing_imports = true 
-show_error_codes = true 
-stric_equality = true 
-warn_redundant_casts = true 
-warn_return_any=true 
-warn_unused_configs = true 
 

@@ -34,7 +34,6 @@ class kernelOperation:
     def pad_width(self):
         return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in self.border)
 
-    
     # @functools.cached_property
     @property
     def output_shape(self):
@@ -42,7 +41,7 @@ class kernelOperation:
             (xi + (li + ri) - ki) // si + 1 for xi, ki, si, (li, ri) in ZIP(
                 self.shape, self.kernel_size, self.strides, self.border))
 
-    # @functools.cached_property 
+    # @functools.cached_property
     @property
     @functools.partial(jax.profiler.annotate_function, name="views")
     def views(self) -> tuple[jnp.ndarray, ...]:
@@ -76,8 +75,7 @@ class kernelOperation:
         return tuple(self.func_dict.values())
 
     def index_from_view(self, view):
-        return tuple(view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) //
-                                                                  2]
+        return tuple(view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) //2]
                      for i, wi in enumerate(self.kernel_size))
 
     # @staticmethod

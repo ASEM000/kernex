@@ -21,11 +21,13 @@ class baseKernelScan(kernelOperation):
     def reduce_scan_func(self, func, *args, **kwargs) -> Callable:
 
         if self.relative:
+
             def reduce_scan_func_callable(view, array):
                 return array.at[self.index_from_view(view)].set(
                     func(roll_view(array[ix_(*view)]), *args, **kwargs))
 
         else:
+
             def reduce_scan_func_callable(view, array):
                 return array.at[self.index_from_view(view)].set(
                     func((array[ix_(*view)]), *args, **kwargs))

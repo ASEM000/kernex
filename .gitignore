@@ -6,5 +6,4 @@
 examples
 tensorboard
 experimental
-tests/test_nn.py
 

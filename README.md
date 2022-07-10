@@ -1,5 +1,5 @@
 
-![Tests](https://github.com/ASEM000/kernex/blob/workflows/.github/workflows/tests.yml/badge.svg)
+![Tests](https://github.com/ASEM000/kernex/actions/workflows/tests.yml/badge.svg)
 
 <div align = "center">
 

@@ -253,7 +253,7 @@ for line in kx_solution[::20]:
 
 ```
 
-![image](assets/linearconvection.png)
+![image](assets/regression_example.png)
 
 </details>
 

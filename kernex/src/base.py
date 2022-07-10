@@ -21,8 +21,7 @@ from kernex.treeclass.decorator import static_field, treeclass
 class kernelOperation:
     """base class all kernel operations"""
 
-    func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...],
-                             ...]] = static_field()
+    func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...],...]] = static_field()
     shape: tuple[int, ...] = static_field()
     kernel_size: tuple[int, ...] = static_field()
     strides: tuple[int, ...] = static_field()
@@ -75,7 +74,8 @@ class kernelOperation:
         return tuple(self.func_dict.values())
 
     def index_from_view(self, view):
-        return tuple(view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) //2]
+        return tuple(view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) //
+                                                                  2]
                      for i, wi in enumerate(self.kernel_size))
 
     # @staticmethod

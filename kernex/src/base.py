@@ -17,14 +17,14 @@ from kernex.src.utils import (
 )
 from kernex.treeclass.decorator import static_field, treeclass
 
-FuncDict = dict[Callable[[Any], jnp.ndarray]:tuple[tuple[int, ...], ...]]
+# FuncDict = dict[Callable[[Any], jnp.ndarray]:tuple[tuple[int, ...], ...]]
 
 
 @treeclass
 class kernelOperation:
     """base class all kernel operations"""
 
-    func_dict: FuncDict = static_field()
+    func_dict: dict[Callable[[Any],jnp.ndarray:tuple[int,...],...]] = static_field()
     shape: tuple[int, ...] = static_field()
     kernel_size: tuple[int, ...] = static_field()
     strides: tuple[int, ...] = static_field()

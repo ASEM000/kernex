@@ -10,4 +10,4 @@ lint:
     - isort@5.10.1
     - markdownlint@0.31.1
     - prettier@2.7.1
-    - mypy@0.910
+    # - mypy@0.910

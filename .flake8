@@ -4,3 +4,8 @@ max-line-length = 140
 extend-ignore = D1, D2, E1, E2, E3, E501, W1, W2, W3, W5
 per-file-ignores =
     */__init__.py: F401
+
+exclude = 
+    tests
+    tests_and_benchmarks
+    experimental

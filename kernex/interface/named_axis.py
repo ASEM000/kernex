@@ -13,15 +13,14 @@ import jax.numpy as jnp
 
 
 class sorted_dict(dict):
-
     """a class that sort a key before setting or getting an item"""
 
     def __getitem__(self, key: tuple[str, ...]):
-        key = (key,) if isinstance(key, str) else tuple(sorted(key))
+        key = (key, ) if isinstance(key, str) else tuple(sorted(key))
         return super().__getitem__(key)
 
     def __setitem__(self, key: tuple[str, ...], val: jnp.ndarray):
-        key = (key,) if isinstance(key, str) else tuple(sorted(key))
+        key = (key, ) if isinstance(key, str) else tuple(sorted(key))
         super().__setitem__(key, val)
 
 
@@ -29,8 +28,9 @@ class sorted_dict(dict):
 
 
 def generate_named_axis(
-    kernel_size: tuple[int, ...], named_axis: dict[int, str], relative_view: bool = True
-) -> dict[str, tuple[int, ...]]:
+        kernel_size: tuple[int, ...],
+        named_axis: dict[int, str],
+        relative_view: bool = True) -> dict[str, tuple[int, ...]]:
     """
     --- Explanation
         return a dict that maps named axis to their integer value indices
@@ -81,11 +81,9 @@ def generate_named_axis(
     """
 
     # helper function to return range of sliding kernel_size  for a given dimension
-    range_func = (
-        (lambda wi: tuple(range(-((wi - 1) // 2), (wi) // 2 + 1)))
-        if relative_view
-        else (lambda wi: tuple(range(wi)))
-    )
+    range_func = ((lambda wi: tuple(range(-(
+        (wi - 1) // 2), (wi) // 2 + 1))) if relative_view else
+                  (lambda wi: tuple(range(wi))))
 
     # default case is numeric dimension maps to itself
     default_named_axis = {dim: dim for dim in range(len(kernel_size))}
@@ -94,8 +92,9 @@ def generate_named_axis(
     default_named_axis.update(named_axis)
 
     # helepr function to return +d,-d,d if d>0,d=0,d<-0 respectively
-    # trunk-ignore(flake8/E731)
-    operator_func = lambda idx: f"+{idx}" if idx > 0 else (f"{idx}" if idx < 0 else "")
+
+    def operator_func(idx):
+        return f"+{idx}" if idx > 0 else (f"{idx}" if idx < 0 else "")
 
     # partial named axes if not all dimensions are named
     partial_naming = not (len(kernel_size) == len(named_axis))
@@ -112,7 +111,8 @@ def generate_named_axis(
             # example {0:'i'}
             # index is incremented and decremented
             keys[dim] = [
-                f"{val}{operator_func(idx)}" for idx in range_func(kernel_size[dim])
+                f"{val}{operator_func(idx)}"
+                for idx in range_func(kernel_size[dim])
             ]
             vals[dim] = range_func(kernel_size[dim])
 
@@ -153,6 +153,7 @@ def named_axis_wrapper(kernel_size, named_axis):
     x = copy.copy(named_axis_dict)
 
     def call(func: Callable):
+
         @functools.wraps(func)
         def inner(X: jnp.ndarray, *args, **kwargs):
             # switch the input of the function to operate on dictionary

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import functools
+import sys
 from itertools import product
 from typing import Any, Callable
 
-import jax
 from jax import numpy as jnp
+from pytreeclass import static_field, tree
 
 from kernex.src.utils import (
     ZIP,
@@ -14,35 +15,33 @@ from kernex.src.utils import (
     index_from_view,
     key_search,
 )
-from kernex.treeclass.decorator import static_field, treeclass
+
+property = functools.cached_property if sys.version_info.minor > 7 else property
 
 
-@treeclass
+@tree
 class kernelOperation:
     """base class all kernel operations"""
 
-    func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...],...]] = static_field()
+    func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...],
+                             ...]] = static_field()
     shape: tuple[int, ...] = static_field()
     kernel_size: tuple[int, ...] = static_field()
     strides: tuple[int, ...] = static_field()
     border: tuple[tuple[int, int], ...] = static_field()
     relative: bool = static_field()
 
-    # @functools.cached_property
     @property
     def pad_width(self):
         return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in self.border)
 
-    # @functools.cached_property
     @property
     def output_shape(self):
         return tuple(
             (xi + (li + ri) - ki) // si + 1 for xi, ki, si, (li, ri) in ZIP(
                 self.shape, self.kernel_size, self.strides, self.border))
 
-    # @functools.cached_property
     @property
-    @functools.partial(jax.profiler.annotate_function, name="views")
     def views(self) -> tuple[jnp.ndarray, ...]:
         """Generate absolute sampling matrix"""
         dim_range = tuple(
@@ -53,7 +52,6 @@ class kernelOperation:
         return tuple(
             map(lambda xi, wi: xi.reshape(-1, wi), matrix, self.kernel_size))
 
-    # @functools.cached_property
     @property
     def indices(self):
         return tuple(product(*[range(d) for d in self.shape]))
@@ -63,12 +61,10 @@ class kernelOperation:
         return key_search(key=tuple(index_from_view(view, self.kernel_size)),
                           keys=self.slices)
 
-    # @functools.cached_property
     @property
     def funcs(self):
         return tuple(self.func_dict.keys())
 
-    # @functools.cached_property
     @property
     def slices(self):
         return tuple(self.func_dict.values())

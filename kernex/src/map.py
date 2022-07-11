@@ -1,22 +1,30 @@
 from __future__ import annotations
 
+import functools
+import sys
 from typing import Callable
 
 from jax import lax
 from jax import numpy as jnp
 from jax import vmap
+from pytreeclass import tree
 
 from kernex.src.base import kernelOperation
 from kernex.src.utils import ZIP, ix_, offset_to_padding, roll_view
-from kernex.treeclass.decorator import treeclass
+
+property = functools.cached_property if sys.version_info.minor > 7 else property
 
 
-@treeclass
+@tree
 class baseKernelMap(kernelOperation):
 
     def __post_init__(self):
-        self.__call__ = (self.__single_call__
-                         if len(self.funcs) == 1 else self.__multi_call__)
+
+        if len(self.funcs) == 1:
+            self.__call__ = self.__single_call__
+
+        else:
+            self.__call__ = self.__multi_call__
 
     def reduce_map_func(self, func, *args, **kwargs) -> Callable:
 
@@ -56,7 +64,7 @@ class baseKernelMap(kernelOperation):
         return result.reshape(*self.output_shape, *func_shape)
 
 
-@treeclass
+@tree
 class kernelMap(baseKernelMap):
 
     def __init__(self, func_dict, shape, kernel_size, strides, padding,
@@ -69,7 +77,7 @@ class kernelMap(baseKernelMap):
         return self.__call__(array, *args, **kwargs)
 
 
-@treeclass
+@tree
 class offsetKernelMap(kernelMap):
 
     def __init__(self, func_dict, shape, kernel_size, strides, offset,
@@ -80,7 +88,6 @@ class offsetKernelMap(kernelMap):
         super().__init__(func_dict, shape, kernel_size, strides,
                          offset_to_padding(offset, kernel_size), relative)
 
-    # @functools.cached_property
     @property
     def set_indices(self):
         return tuple(

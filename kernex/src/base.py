@@ -6,7 +6,7 @@ from itertools import product
 from typing import Any, Callable
 
 from jax import numpy as jnp
-from pytreeclass import static_field, tree
+from pytreeclass import static_field, treeclass
 
 from kernex.src.utils import (
     ZIP,
@@ -19,7 +19,7 @@ from kernex.src.utils import (
 property = functools.cached_property if sys.version_info.minor > 7 else property
 
 
-@tree
+@treeclass
 class kernelOperation:
     """base class all kernel operations"""
 

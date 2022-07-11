@@ -9,7 +9,7 @@ import functools
 from typing import Callable
 
 from jax import numpy as jnp
-from pytreeclass import static_field, tree
+from pytreeclass import static_field, treeclass
 
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
@@ -22,7 +22,7 @@ from kernex.src.scan import kernelScan, offsetKernelScan
 from kernex.src.utils import ZIP
 
 
-@tree
+@treeclass
 class kernexClass(dict):
 
     kernel_size: tuple[int, ...] | int = static_field()
@@ -168,7 +168,7 @@ class kernexClass(dict):
             )
 
 
-@tree
+@treeclass
 class sscan(kernexClass):
 
     def __init__(self,
@@ -187,7 +187,7 @@ class sscan(kernexClass):
                          named_axis=named_axis)
 
 
-@tree
+@treeclass
 class smap(kernexClass):
 
     def __init__(self,
@@ -206,7 +206,7 @@ class smap(kernexClass):
                          named_axis=named_axis)
 
 
-@tree
+@treeclass
 class kscan(kernexClass):
 
     def __init__(self,
@@ -225,7 +225,7 @@ class kscan(kernexClass):
                          named_axis=named_axis)
 
 
-@tree
+@treeclass
 class kmap(kernexClass):
 
     def __init__(self,

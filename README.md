@@ -31,7 +31,7 @@ Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general
 import jax
 import jax.numpy as jnp
 import kernex as kex
-from pytreeclass import tree,tree_viz
+from pytreeclass import treeclass,tree_viz
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -143,6 +143,8 @@ DeviceArray([2.       , 4.       , 6.3333335], dtype=float32)
 </details>
 
 <details><summary>Apply stencil operations  by index</summary>
+To achieve the following operation with `jax.lax.switch` , we need a list of 10 functions correspoing to each cell of the example array.
+For this reason , kernex adopts a modified version of `jax.lax.switch` to reduce the number of branches required to be equal to the number of unique functions assigned.
 
 ```python
 
@@ -273,7 +275,7 @@ for line in kx_solution[::20]:
 <summary>MaxPool2D layer</summary>
 
 ```python
-@tree
+@treeclass
 class MaxPool2D:
 
     kernel_size: tuple[int, ...] | int = static_field()
@@ -326,7 +328,7 @@ array = jnp.arange(1,26).reshape(1,1,5,5) # batch,channel,row,col
 import os
 from PIL import Image
 
-@tree
+@treeclass
 class AverageBlurLayer:
   '''channels first'''
 
@@ -377,7 +379,7 @@ plt.imshow(blurred_image)
 
 ```python
 
-@tree
+@treeclass
 class Conv2D:
 
     weight: jnp.ndarray

@@ -7,7 +7,7 @@ from typing import Callable
 from jax import lax
 from jax import numpy as jnp
 from jax import vmap
-from pytreeclass import tree
+from pytreeclass import treeclass
 
 from kernex.src.base import kernelOperation
 from kernex.src.utils import ZIP, ix_, offset_to_padding, roll_view
@@ -15,7 +15,7 @@ from kernex.src.utils import ZIP, ix_, offset_to_padding, roll_view
 property = functools.cached_property if sys.version_info.minor > 7 else property
 
 
-@tree
+@treeclass
 class baseKernelMap(kernelOperation):
 
     def __post_init__(self):
@@ -64,7 +64,7 @@ class baseKernelMap(kernelOperation):
         return result.reshape(*self.output_shape, *func_shape)
 
 
-@tree
+@treeclass
 class kernelMap(baseKernelMap):
 
     def __init__(self, func_dict, shape, kernel_size, strides, padding,
@@ -77,7 +77,7 @@ class kernelMap(baseKernelMap):
         return self.__call__(array, *args, **kwargs)
 
 
-@tree
+@treeclass
 class offsetKernelMap(kernelMap):
 
     def __init__(self, func_dict, shape, kernel_size, strides, offset,

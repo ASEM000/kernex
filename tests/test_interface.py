@@ -1,5 +1,3 @@
-from functools import partial
-
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -67,7 +65,7 @@ def test_Diffusion2D():
             u[:, -1] = 1
 
     diffuse(nt)
-    func_diffusion2D = partial(DIFFUSION2D, nu=nu, dt=dt, dx=dx, dy=dy)
+    # func_diffusion2D = partial(DIFFUSION2D, nu=nu, dt=dt, dx=dx, dy=dy)
 
     U = DIFFUSION2D(U, nu, dt, dx, dy)
 

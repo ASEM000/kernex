@@ -11,6 +11,7 @@
 ![pyver](https://img.shields.io/badge/python-3.7%203.8%203.9%203.10-red)
 ![codestyle](https://img.shields.io/badge/code%20style-yapf-lightgrey)
 [![Downloads](https://static.pepy.tech/personalized-badge/kernex?period=month&units=international_system&left_color=black&right_color=blue&left_text=Downloads)](https://pepy.tech/project/kernex)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/14UEqKzIyZsDzQ9IMeanvztXxbbbatTYV?usp=sharing)
 
 
 ## 🛠️ Installation
@@ -26,7 +27,9 @@ pip install kernex
 
    - Create PyTorch like NN classes like [equinox](https://github.com/patrick-kidger/equinox) and [Treex](https://github.com/cgarciae/treex) 
    - Provides Keras-like `model.summary()` and `plot_model` visualizations for pytrees wrapped with `treeclass`. 
-    - Apply math/numpy operations like [tree-math](https://github.com/google/tree-math) - Registering user-defined reduce operations on each class. - Some fancy indexing syntax functionalities like `x[x>0]` on pytrees
+    - Apply math/numpy operations like [tree-math](https://github.com/google/tree-math) 
+    - Registering user-defined reduce operations on each class. 
+    - Some fancy indexing syntax functionalities like `x[x>0]` on pytrees
 
 ## 🔢 Examples
 ### `kmap`

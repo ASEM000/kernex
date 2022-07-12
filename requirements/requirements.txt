@@ -1,0 +1,4 @@
+
+jax>=0.1.55
+jaxlib>=0.1.37
+pytreeclass>=0.0.4

@@ -1,8 +1,17 @@
 # Autoformatter friendly flake8 config (all formatting rules disabled)
 [flake8]
-max-line-length = 120
-; extend-ignore = D1, D2, E1, E2, E3, E501, W1, W2, W3, W5
-per-file-ignores =
+max-line-length = 
+    120
+
+ignore = 
+    W291 # Trailing whitespace 
+    W293 # Blank line contains whitespace 
+    W504 # Line break occurred after a binary operator 
+    E123 # Closing bracket does not match indentation of opening bracket's line 
+    E731 # Do not assign a lambda expression, use a def 
+    E128 # Continuation line under-indented for visual indent
+
+per-file-ignores = 
     */__init__.py: F401
 
 exclude = 

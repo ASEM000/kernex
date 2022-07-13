@@ -23,8 +23,7 @@ property = functools.cached_property if sys.version_info.minor > 7 else property
 class kernelOperation:
     """base class all kernel operations"""
 
-    func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...],
-                             ...]] = static_field()
+    func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...], ...]] = static_field()  # fmt: skip
     shape: tuple[int, ...] = static_field()
     kernel_size: tuple[int, ...] = static_field()
     strides: tuple[int, ...] = static_field()
@@ -38,19 +37,24 @@ class kernelOperation:
     @property
     def output_shape(self):
         return tuple(
-            (xi + (li + ri) - ki) // si + 1 for xi, ki, si, (li, ri) in ZIP(
-                self.shape, self.kernel_size, self.strides, self.border))
+            (xi + (li + ri) - ki) // si + 1
+            for xi, ki, si, (li, ri) in ZIP(
+                self.shape, self.kernel_size, self.strides, self.border
+            )
+        )
 
     @property
     def views(self) -> tuple[jnp.ndarray, ...]:
         """Generate absolute sampling matrix"""
         dim_range = tuple(
-            general_arange(di, ki, si, x0, xf) for (di, ki, si, (x0, xf)) in
-            zip(self.shape, self.kernel_size, self.strides, self.border))
+            general_arange(di, ki, si, x0, xf)
+            for (di, ki, si, (x0, xf)) in zip(
+                self.shape, self.kernel_size, self.strides, self.border
+            )
+        )
 
         matrix = general_product(*dim_range)
-        return tuple(
-            map(lambda xi, wi: xi.reshape(-1, wi), matrix, self.kernel_size))
+        return tuple(map(lambda xi, wi: xi.reshape(-1, wi), matrix, self.kernel_size))
 
     @property
     def indices(self):
@@ -58,8 +62,9 @@ class kernelOperation:
 
     def func_index_from_view(self, view: tuple[jnp.ndarray, ...]):
 
-        return key_search(key=tuple(index_from_view(view, self.kernel_size)),
-                          keys=self.slices)
+        return key_search(
+            key=tuple(index_from_view(view, self.kernel_size)), keys=self.slices
+        )
 
     @property
     def funcs(self):
@@ -70,9 +75,10 @@ class kernelOperation:
         return tuple(self.func_dict.values())
 
     def index_from_view(self, view):
-        return tuple(view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) //
-                                                                  2]
-                     for i, wi in enumerate(self.kernel_size))
+        return tuple(
+            view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) // 2]
+            for i, wi in enumerate(self.kernel_size)
+        )
 
     # @staticmethod
     # def patch_from_view(view,array):

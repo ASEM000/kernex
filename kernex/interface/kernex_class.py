@@ -27,7 +27,7 @@ class kernexClass(dict):
 
     kernel_size: tuple[int, ...] | int = static_field()
     strides: tuple[int, ...] | int = static_field(default=1)
-    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = static_field(default=0, repr=False)
+    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = static_field(default=0, repr=False)  # fmt: skip
     relative: bool = static_field(default=False)
     inplace: bool = static_field(default=False)
     use_offset: bool = static_field(default=False)
@@ -35,8 +35,9 @@ class kernexClass(dict):
 
     def __post_init__(self):
 
-        self.border = (resolve_offset_argument if self.use_offset else
-                       resolve_padding_argument)(self.border, self.kernel_size)
+        self.border = (
+            resolve_offset_argument if self.use_offset else resolve_padding_argument
+        )(self.border, self.kernel_size)
 
         if self.inplace:
             self.kernel_op = offsetKernelScan if self.use_offset else kernelScan
@@ -54,25 +55,28 @@ class kernexClass(dict):
         self.__resolved__ = True
 
         if isinstance(self.kernel_size, tuple):
-            assert all(isinstance(wi, int) for wi in self.kernel_size), \
-                ("kernel_size  input must be a tuple of int.\n",
-                f"Found {tuple(type(wi) for wi in self.kernel_size  )}")
+            assert all(isinstance(wi, int) for wi in self.kernel_size), (
+                "kernel_size  input must be a tuple of int.\n",
+                f"Found {tuple(type(wi) for wi in self.kernel_size  )}",
+            )
 
-            assert len(self.kernel_size) == len(self.shape), \
-                ("kernel_size  dimension must be equal to array dimension.",
-                f"Found len({self.kernel_size }) != len{(self.shape)}")
+            assert len(self.kernel_size) == len(self.shape), (
+                "kernel_size  dimension must be equal to array dimension.",
+                f"Found len({self.kernel_size }) != len{(self.shape)}",
+            )
 
-            assert all(ai <= si for (ai, si) in zip(self.kernel_size, self.shape)),\
-                ("kernel_size  shape must be less than array shape.\n",
-                f"Found kernel_size  = {self.kernel_size } array shape = {self.shape} ")
+            assert all(ai <= si for (ai, si) in zip(self.kernel_size, self.shape)), (
+                "kernel_size  shape must be less than array shape.\n",
+                f"Found kernel_size  = {self.kernel_size } array shape = {self.shape} ",
+            )
 
             # convert kernel_size  = -1 to shape dimension
             self.kernel_size = tuple(
-                si if wi == -1 else wi
-                for si, wi in ZIP(self.shape, self.kernel_size))
+                si if wi == -1 else wi for si, wi in ZIP(self.shape, self.kernel_size)
+            )
 
         elif isinstance(self.kernel_size, int):
-            self.kernel_size = (self.kernel_size, ) * len(self.shape)
+            self.kernel_size = (self.kernel_size,) * len(self.shape)
 
         else:
             raise ValueError(
@@ -80,19 +84,23 @@ class kernexClass(dict):
             )
 
         if isinstance(self.strides, tuple):
-            assert all(isinstance(wi, int) for wi in self.strides),\
-                f"strides  input must be a tuple of int. Found {tuple(type(wi) for wi in self.strides  )}"
+            assert all(isinstance(wi, int) for wi in self.strides), (
+                "strides  input must be a tuple of int.",
+                f" Found {tuple(type(wi) for wi in self.strides)}",
+            )
 
-            assert len(self.strides) == len(self.shape),\
-                ("strides  dimension must be equal to array dimension." ,
-                f"Found len({self.strides }) != len{(self.shape)}")
+            assert len(self.strides) == len(self.shape), (
+                "strides  dimension must be equal to array dimension.",
+                f"Found len({self.strides }) != len{(self.shape)}",
+            )
 
-            assert all(ai <= si for (ai, si) in zip(self.strides, self.shape)),\
-                ("strides  shpae must be less than array shape.\n" ,
-                f"Found strides  = {self.strides } array shape = {self.shape}")
+            assert all(ai <= si for (ai, si) in zip(self.strides, self.shape)), (
+                "strides  shpae must be less than array shape.\n",
+                f"Found strides  = {self.strides } array shape = {self.shape}",
+            )
 
         elif isinstance(self.strides, int):
-            self.strides = (self.strides, ) * len(self.shape)
+            self.strides = (self.strides,) * len(self.shape)
 
         else:
             raise ValueError(
@@ -106,8 +114,9 @@ class kernexClass(dict):
 
     def __setitem__(self, index, func):
 
-        assert isinstance(func, Callable),\
-            f"Input must be of type Callable. Found {type(func)}"
+        assert isinstance(
+            func, Callable
+        ), f"Input must be of type Callable. Found {type(func)}"
 
         if func in self:
             index = self[func] + [index]
@@ -120,37 +129,47 @@ class kernexClass(dict):
 
         self.shape = array.shape
         self.__post_resolutions__()
-
         self.func_dict = {}
 
         for (func, index) in self.items():
 
             if func is not None and self.named_axis is not None:
                 transformed_function = named_axis_wrapper(
-                    self.kernel_size, self.named_axis)(func)
+                    self.kernel_size, self.named_axis
+                )(func)
                 self.func_dict[transformed_function] = index
 
             else:
                 self.func_dict[func] = index
 
-        return self.kernel_op(self.func_dict, self.shape, self.kernel_size,
-                              self.strides, self.border,
-                              self.relative)(array, *args, **kwargs)
+        return self.kernel_op(
+            self.func_dict,
+            self.shape,
+            self.kernel_size,
+            self.strides,
+            self.border,
+            self.relative,
+        )(array, *args, **kwargs)
 
     def __decorator_call__(self, func):
-
         def call(array, *args, **kwargs):
+
             self.shape = array.shape
             self.__post_resolutions__()
-
             self.func_dict = {
-                named_axis_wrapper(self.kernel_size, self.named_axis)(func) if self.named_axis is not None else func:
-                ()
+                named_axis_wrapper(self.kernel_size, self.named_axis)(func)
+                if self.named_axis is not None
+                else func: ()
             }
 
-            return self.kernel_op(self.func_dict, self.shape, self.kernel_size,
-                                  self.strides, self.border,
-                                  self.relative)(array, *args, **kwargs)
+            return self.kernel_op(
+                self.func_dict,
+                self.shape,
+                self.kernel_size,
+                self.strides,
+                self.border,
+                self.relative,
+            )(array, *args, **kwargs)
 
         return call
 
@@ -164,81 +183,76 @@ class kernexClass(dict):
 
         else:
             raise ValueError(
-                f"expected jnp.ndarray or Callable for the first argument. Found {tuple(*args,**kwargs)}"
+                (
+                    "expected jnp.ndarray or Callable for the first argument.",
+                    f" Found {tuple(*args,**kwargs)}",
+                )
             )
 
 
 @treeclass
 class sscan(kernexClass):
+    def __init__(
+        self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
+    ):
 
-    def __init__(self,
-                 kernel_size=1,
-                 strides=1,
-                 offset=0,
-                 relative=False,
-                 named_axis=None):
-
-        super().__init__(kernel_size=kernel_size,
-                         strides=strides,
-                         border=offset,
-                         relative=relative,
-                         inplace=True,
-                         use_offset=True,
-                         named_axis=named_axis)
+        super().__init__(
+            kernel_size=kernel_size,
+            strides=strides,
+            border=offset,
+            relative=relative,
+            inplace=True,
+            use_offset=True,
+            named_axis=named_axis,
+        )
 
 
 @treeclass
 class smap(kernexClass):
+    def __init__(
+        self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
+    ):
 
-    def __init__(self,
-                 kernel_size=1,
-                 strides=1,
-                 offset=0,
-                 relative=False,
-                 named_axis=None):
-
-        super().__init__(kernel_size=kernel_size,
-                         strides=strides,
-                         border=offset,
-                         relative=relative,
-                         inplace=False,
-                         use_offset=True,
-                         named_axis=named_axis)
+        super().__init__(
+            kernel_size=kernel_size,
+            strides=strides,
+            border=offset,
+            relative=relative,
+            inplace=False,
+            use_offset=True,
+            named_axis=named_axis,
+        )
 
 
 @treeclass
 class kscan(kernexClass):
+    def __init__(
+        self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
+    ):
 
-    def __init__(self,
-                 kernel_size=1,
-                 strides=1,
-                 padding=0,
-                 relative=False,
-                 named_axis=None):
-
-        super().__init__(kernel_size=kernel_size,
-                         strides=strides,
-                         border=padding,
-                         relative=relative,
-                         inplace=True,
-                         use_offset=False,
-                         named_axis=named_axis)
+        super().__init__(
+            kernel_size=kernel_size,
+            strides=strides,
+            border=padding,
+            relative=relative,
+            inplace=True,
+            use_offset=False,
+            named_axis=named_axis,
+        )
 
 
 @treeclass
 class kmap(kernexClass):
+    def __init__(
+        self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
+    ):
 
-    def __init__(self,
-                 kernel_size=1,
-                 strides=1,
-                 padding=0,
-                 relative=False,
-                 named_axis=None):
-
-        super().__init__(kernel_size=kernel_size,
-                         strides=strides,
-                         border=padding,
-                         relative=relative,
-                         inplace=False,
-                         use_offset=False,
-                         named_axis=named_axis)
+        super().__init__(
+            kernel_size=kernel_size,
+            strides=strides,
+            border=padding,
+            relative=relative,
+            inplace=False,
+            use_offset=False,
+            named_axis=named_axis,
+        )

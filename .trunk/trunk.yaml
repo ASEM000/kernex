@@ -3,8 +3,8 @@ cli:
   version: 0.14.0-beta
 lint:
   enabled:
-    # - black@22.3.0
-    - yapf@0.32.0
+    - black@22.3.0
+    # - yapf@0.32.0
     - flake8@4.0.1
     - gitleaks@8.8.8
     - isort@5.10.1

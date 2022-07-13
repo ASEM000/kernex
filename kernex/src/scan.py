@@ -17,7 +17,6 @@ property = functools.cached_property if sys.version_info.minor > 7 else property
 @treeclass
 class baseKernelScan(kernelOperation):
     def __post_init__(self):
-
         if len(self.funcs) == 1:
             self.__call__ = self.__single_call__
 
@@ -25,7 +24,6 @@ class baseKernelScan(kernelOperation):
             self.__call__ = self.__multi_call__
 
     def reduce_scan_func(self, func, *args, **kwargs) -> Callable:
-
         if self.relative:
 
             def reduce_scan_func_callable(view, array):

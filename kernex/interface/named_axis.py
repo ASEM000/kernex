@@ -16,11 +16,11 @@ class sorted_dict(dict):
     """a class that sort a key before setting or getting an item"""
 
     def __getitem__(self, key: tuple[str, ...]):
-        key = (key, ) if isinstance(key, str) else tuple(sorted(key))
+        key = (key,) if isinstance(key, str) else tuple(sorted(key))
         return super().__getitem__(key)
 
     def __setitem__(self, key: tuple[str, ...], val: jnp.ndarray):
-        key = (key, ) if isinstance(key, str) else tuple(sorted(key))
+        key = (key,) if isinstance(key, str) else tuple(sorted(key))
         super().__setitem__(key, val)
 
 
@@ -28,9 +28,8 @@ class sorted_dict(dict):
 
 
 def generate_named_axis(
-        kernel_size: tuple[int, ...],
-        named_axis: dict[int, str],
-        relative_view: bool = True) -> dict[str, tuple[int, ...]]:
+    kernel_size: tuple[int, ...], named_axis: dict[int, str], relative: bool = True
+) -> dict[str, tuple[int, ...]]:
     """
     --- Explanation
         return a dict that maps named axis to their integer value indices
@@ -45,12 +44,12 @@ def generate_named_axis(
     --- Args
         kernel_size  : kernel_size  dim tuple
         named_axis : dim:character map
-        relative_view : defines if the kernel_size  indexing is relative or not
+        relative : defines if the kernel_size  indexing is relative or not
 
     --- Examples
 
         ### fully named axes case (inordered keys) :
-        >>> generate_named_axis(named_axis={0:'b',1:'a'} , kernel_size =(2,3),relative_view=True)
+        >>> generate_named_axis(named_axis={0:'b',1:'a'} , kernel_size =(2,3),relative=True)
             { ('b', 'a')    : (0, 0),
             ('b', 'a+1')  : (0, 1),
             ('b', 'a-1')  : (0, -1),
@@ -59,7 +58,7 @@ def generate_named_axis(
             ('b+1', 'a-1'): (1, -1)}
 
         #### partially named axes case (ordered keys) (-1,'a') != ('a',-1):
-        >>> generate_named_axis(named_axis={0:'b'} , kernel_size =(2,3),relative_view=True)
+        >>> generate_named_axis(named_axis={0:'b'} , kernel_size =(2,3),relative=True)
             {('b', -1)    : (0, -1),
             ('b', 0)    : (0, 0),
             ('b', 1)    : (0, 1),
@@ -67,7 +66,7 @@ def generate_named_axis(
             ('b+1', 0)  :  (1, 0),
             ('b+1', 1)  : (1, 1)}
 
-        >>> generate_named_axis(named_axis={0:'b'} , kernel_size =(2,3),relative_view=False)
+        >>> generate_named_axis(named_axis={0:'b'} , kernel_size =(2,3),relative=False)
             { ('b', 0)    : (0, 0),
             ('b', 1)    : (0, 1),
             ('b', 2)    : (0, 2),
@@ -81,9 +80,12 @@ def generate_named_axis(
     """
 
     # helper function to return range of sliding kernel_size  for a given dimension
-    range_func = ((lambda wi: tuple(range(-(
-        (wi - 1) // 2), (wi) // 2 + 1))) if relative_view else
-                  (lambda wi: tuple(range(wi))))
+    def range_func(wi):
+        if relative:
+            return tuple(range(-((wi - 1) // 2), (wi) // 2 + 1))
+
+        else:
+            return tuple(range(wi))
 
     # default case is numeric dimension maps to itself
     default_named_axis = {dim: dim for dim in range(len(kernel_size))}
@@ -104,15 +106,13 @@ def generate_named_axis(
 
     # iterate over key,val in named_axis dict
     for dim, val in default_named_axis.items():
-
         if isinstance(val, str):
             # get keys for each dimension : [ ['i-m' ,..,'i+m'] , ['j-n',...,'j+n'] , .. ]
             # single charater case for each dimensoon
             # example {0:'i'}
             # index is incremented and decremented
             keys[dim] = [
-                f"{val}{operator_func(idx)}"
-                for idx in range_func(kernel_size[dim])
+                f"{val}{operator_func(idx)}" for idx in range_func(kernel_size[dim])
             ]
             vals[dim] = range_func(kernel_size[dim])
 
@@ -153,7 +153,6 @@ def named_axis_wrapper(kernel_size, named_axis):
     x = copy.copy(named_axis_dict)
 
     def call(func: Callable):
-
         @functools.wraps(func)
         def inner(X: jnp.ndarray, *args, **kwargs):
             # switch the input of the function to operate on dictionary

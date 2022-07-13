@@ -143,7 +143,6 @@ def index_from_view(view, kernel_size):
 
 def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]):
     def compare_key_item(xi: jnp.ndarray, yi: jnp.ndarray) -> jnp.ndarray:
-
         # index style = (start,end,step)
         if yi.size == 3:
             return (yi[0] <= xi) * (xi < yi[1]) * (xi % yi[2] == 0)

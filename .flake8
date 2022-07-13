@@ -3,13 +3,7 @@
 max-line-length = 
     120
 
-ignore = 
-    W291 # Trailing whitespace 
-    W293 # Blank line contains whitespace 
-    W504 # Line break occurred after a binary operator 
-    E123 # Closing bracket does not match indentation of opening bracket's line 
-    E731 # Do not assign a lambda expression, use a def 
-    E128 # Continuation line under-indented for visual indent
+ignore = W291 , W293 ,W503 ,E123 ,E731 ,E128 ,W391,E203
 
 per-file-ignores = 
     */__init__.py: F401

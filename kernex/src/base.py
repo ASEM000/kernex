@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import sys
+from functools import lru_cache
 from itertools import product
 from typing import Any, Callable
 
@@ -14,9 +15,10 @@ from kernex.src.utils import (
     general_product,
     index_from_view,
     key_search,
+    cached_property
 )
 
-property = functools.cached_property if sys.version_info.minor > 7 else property
+property = functools.cached_property if sys.version_info.minor > 7 else cached_property
 
 
 @treeclass
@@ -61,7 +63,6 @@ class kernelOperation:
         return tuple(product(*[range(d) for d in self.shape]))
 
     def func_index_from_view(self, view: tuple[jnp.ndarray, ...]):
-
         return key_search(
             key=tuple(index_from_view(view, self.kernel_size)), keys=self.slices
         )

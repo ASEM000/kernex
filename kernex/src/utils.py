@@ -206,3 +206,13 @@ def key_search(key, keys):
         )
 
     return recurse(0, keys[::-1]) if len(keys) > 0 else 0
+
+class cached_property:
+    def __init__(self, func):
+        self.name = func.__name__
+        self.func = func
+
+    def __get__(self, instance, owner):
+        attr = self.func(instance)
+        setattr(instance, self.name, attr)
+        return attr

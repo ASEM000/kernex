@@ -5,10 +5,12 @@
 from __future__ import annotations
 
 import functools
+import inspect
 
 import jax
 from jax import numpy as jnp
 from jax import vmap
+
 
 
 def ZIP(*args):
@@ -206,6 +208,7 @@ def key_search(key, keys):
         )
 
     return recurse(0, keys[::-1]) if len(keys) > 0 else 0
+
 
 class cached_property:
     def __init__(self, func):

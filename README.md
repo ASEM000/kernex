@@ -6,7 +6,8 @@
 
 [**Installation**](#Installation)
 |[**Description**](#Description)
-|[**Examples**](#Examples)
+|[**Quick Example**](#QuickExample)
+|[**More Examples**](#MoreExamples)
 |[**Benchmarking**](#Benchmarking)
 
 ![Tests](https://github.com/ASEM000/kernex/actions/workflows/tests.yml/badge.svg)
@@ -26,7 +27,47 @@ pip install pytreeclass kernex
 
 Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general stencil computations.
 
-## 🔢 Examples<a id="Examples"></a>
+## Quick Example <a id="QuickExample">
+### Simple kernel sum 
+
+<table>
+<tr>
+<td> kmap </td> <td> kscan </td>
+</tr>
+<tr>
+<td>
+
+```python
+@kernex.kmap(kernel_size=(3,))
+def sum_all(x):
+    return jnp.sum(x)
+
+x = jnp.array([1,2,3,4,5])
+print(sum_all(x))
+>>> [ 6  9 12]
+```
+jax.vmap is used to sum each kernel content.
+![image](assets/kmap_sum.png)
+</td>
+<td>
+    
+```python
+@kernex.kscan(kernel_size=(3,))
+def sum_all(x):
+    return jnp.sum(x)
+
+x = jnp.array([1,2,3,4,5])
+print(sum_all(x))
+>>> [ 6 13 22]
+```
+lax.scan is used to update the array and the kernel sum is taken is calculated sequentailly.
+
+![image](assets/kscan_sum.png)
+</td>
+</tr>
+</table>
+
+## 🔢 More examples<a id="MoreExamples"></a>
 
 ```python
 import jax

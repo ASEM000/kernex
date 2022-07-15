@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import functools
 import sys
-from functools import lru_cache
 from itertools import product
 from typing import Any, Callable
 
@@ -11,14 +10,15 @@ from pytreeclass import static_field, treeclass
 
 from kernex.src.utils import (
     ZIP,
+    cached_property,
     general_arange,
     general_product,
     index_from_view,
     key_search,
-    cached_property
 )
 
-property = functools.cached_property if sys.version_info.minor > 7 else cached_property
+# porting functools.cached_property to py3.7
+property = cached_property
 
 
 @treeclass

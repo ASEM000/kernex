@@ -66,7 +66,7 @@ x = jnp.array([1,2,3,4,5])
 print(sum_all(x))
 >>> [ 6 13 22]
 ```
-`lax.scan` is used to update the array and the window sum is calculated sequentailly.
+`lax.scan` is used to update the array and the window sum is calculated sequentially.
 
 <img src="assets/kscan_sum.png" width=500px align="center">
 </td>
@@ -76,7 +76,7 @@ print(sum_all(x))
 </div>
     </details>
     
-## Function mesh concept <a id="FunctionMesh">
+## 🕸️ Function mesh concept <a id="FunctionMesh">
 <details>
 
 Apply `f(x) = x^2  at index=0  and f(x) = x^3 at  index=(1,10)`
@@ -165,7 +165,7 @@ print(jax.grad(lambda x: jnp.sum(F(x)))(array))
 </table>
 
 Additionally , we can combine the function mesh concept with stencil computation for scientific computing. 
-See [kscan section](#kscan)
+See kscan section in **More examples** section
 
 </div>
 
@@ -504,6 +504,7 @@ class Conv2D:
         return fwd_image(x)
 
 ```
+   </details>
 
 </details>
 <!-- ### Combining everything together -->
@@ -580,4 +581,4 @@ np.testing.assert_allclose(
 
 </details>
     
-    </details>
+ 

@@ -28,8 +28,8 @@ pip install pytreeclass kernex
 
 Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general stencil computations.
 
-## Quick Example <a id="QuickExample">
-### Simple kernel sum 
+## ⏩ Quick Example <a id="QuickExample">
+<details><summary> Simple kernel sum  </summary>
 
 <div align="center">
 <table>
@@ -74,7 +74,8 @@ print(sum_all(x))
 </table>
 
 </div>
-
+    </details>
+    
 ## Function mesh concept <a id="FunctionMesh">
 <details>
 
@@ -172,6 +173,8 @@ See [kscan section](#kscan)
 
 ## 🔢 More examples<a id="MoreExamples"></a>
 
+<details>
+    
 ```python
 import jax
 import jax.numpy as jnp
@@ -576,3 +579,5 @@ np.testing.assert_allclose(
 ```
 
 </details>
+    
+    </details>

@@ -284,6 +284,27 @@ mat = jnp.arange(1,26).reshape(5,5)
 $\Large {\partial u \over \partial t} + c {\partial u \over \partial x} = 0$ <br> <br>
 $\Large u_i^{n} = u_i^{n-1} - c \frac{\Delta t}{\Delta x}(u_i^{n-1}-u_{i-1}^{n-1})$
 
+<div align ="center">
+<table>
+<tr>
+<td> Problem setup </td> <td> Stencil view  </td>
+</tr>
+<tr>
+<td>
+
+<img src="assets/linear_convection_init.png" width="500px">
+
+</td>
+<td>
+
+<img src="assets/linear_convection_view.png" width="500px">
+
+</td>
+</tr>
+</table>
+</div>
+
+
 ```python
 
 # see https://nbviewer.org/github/barbagroup/CFDPython/blob/master/lessons/01_Step_1.ipynb

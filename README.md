@@ -360,7 +360,7 @@ for line in kx_solution[::20]:
 
 ```
 
-![image](assets/linearconvection.png)
+![image](assets/linear_convection.svg)
 
 </details>
 

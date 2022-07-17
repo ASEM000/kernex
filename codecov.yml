@@ -1,0 +1,15 @@
+coverage:
+  status:
+    project:
+      default: false # disable the default status that measures entire project
+      tests:
+        paths:
+          - "tests/"
+        target: 0%
+      source:
+        paths:
+          - "kernex/"
+        target: 0%
+    patch:
+      default:
+        target: 0%

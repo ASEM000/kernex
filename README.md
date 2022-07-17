@@ -30,8 +30,6 @@ Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general
 
 ## ⏩ Quick Example <a id="QuickExample">
 
-<details><summary> Simple kernel sum  </summary>
-
 <div align="center">
 <table>
 <tr>
@@ -45,13 +43,13 @@ Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general
 def sum_all(x):
     return jnp.sum(x)
 
-x = jnp.array([1,2,3,4,5])
-print(sum_all(x))
->>> [ 6  9 12]
+>>> x = jnp.array([1,2,3,4,5])
+>>> print(sum_all(x))
+[ 6  9 12]
 ```
 
 `jax.vmap` is used to sum each window content.
-<img src="assets/kmap_sum.png" width=400px align="center">
+<img src="assets/kmap_sum.png" width=400px>
 
 <br><br><br><br><br><br><br><br><br><br>
 
@@ -63,21 +61,21 @@ print(sum_all(x))
 def sum_all(x):
     return jnp.sum(x)
 
-x = jnp.array([1,2,3,4,5])
-print(sum_all(x))
-
-> > > [ 6 13 22]
+>>> x = jnp.array([1,2,3,4,5])
+>>> print(sum_all(x))
+[ 6 13 22]
 
 ````
 `lax.scan` is used to update the array and the window sum is calculated sequentially.
+the first three rows represents the three sequential steps used to get the solution in the last row.
 
-<img src="assets/kscan_sum.png" width=500px align="center">
+<img src="assets/kscan_sum.png" width=400px>
 </td>
 </tr>
 </table>
 
 </div>
-    </details>
+
 
 ## 🕸️ Function mesh concept <a id="FunctionMesh">
 <details>

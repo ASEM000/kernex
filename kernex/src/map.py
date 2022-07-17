@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import functools
-import sys
 from typing import Callable
 
 from jax import lax
 from jax import numpy as jnp
 from jax import vmap
 from pytreeclass import treeclass
+from pytreeclass.src.decorator_util import cached_property
 
 from kernex.src.base import kernelOperation
 from kernex.src.utils import ZIP, ix_, offset_to_padding, roll_view
 
-property = functools.cached_property if sys.version_info.minor > 7 else property
 
-
-@treeclass
+@treeclass(op=False)
 class baseKernelMap(kernelOperation):
     def __post_init__(self):
         if len(self.funcs) == 1:
@@ -63,7 +60,7 @@ class baseKernelMap(kernelOperation):
         return result.reshape(*self.output_shape, *func_shape)
 
 
-@treeclass
+@treeclass(op=False)
 class kernelMap(baseKernelMap):
     def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
 
@@ -73,7 +70,7 @@ class kernelMap(baseKernelMap):
         return self.__call__(array, *args, **kwargs)
 
 
-@treeclass
+@treeclass(op=False)
 class offsetKernelMap(kernelMap):
     def __init__(self, func_dict, shape, kernel_size, strides, offset, relative):
 
@@ -88,7 +85,7 @@ class offsetKernelMap(kernelMap):
             relative,
         )
 
-    @property
+    @cached_property
     def set_indices(self):
         return tuple(
             jnp.arange(x0, di - xf, si)

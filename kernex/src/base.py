@@ -1,27 +1,22 @@
 from __future__ import annotations
 
-import functools
-import sys
 from itertools import product
 from typing import Any, Callable
 
 from jax import numpy as jnp
 from pytreeclass import static_field, treeclass
+from pytreeclass.src.decorator_util import cached_property
 
 from kernex.src.utils import (
     ZIP,
-    cached_property,
     general_arange,
     general_product,
     index_from_view,
     key_search,
 )
 
-# porting functools.cached_property to py3.7
-property = cached_property
 
-
-@treeclass
+@treeclass(op=False)
 class kernelOperation:
     """base class all kernel operations"""
 
@@ -32,11 +27,11 @@ class kernelOperation:
     border: tuple[tuple[int, int], ...] = static_field()
     relative: bool = static_field()
 
-    @property
+    @cached_property
     def pad_width(self):
         return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in self.border)
 
-    @property
+    @cached_property
     def output_shape(self):
         return tuple(
             (xi + (li + ri) - ki) // si + 1
@@ -45,7 +40,7 @@ class kernelOperation:
             )
         )
 
-    @property
+    @cached_property
     def views(self) -> tuple[jnp.ndarray, ...]:
         """Generate absolute sampling matrix"""
         dim_range = tuple(
@@ -58,7 +53,7 @@ class kernelOperation:
         matrix = general_product(*dim_range)
         return tuple(map(lambda xi, wi: xi.reshape(-1, wi), matrix, self.kernel_size))
 
-    @property
+    @cached_property
     def indices(self):
         return tuple(product(*[range(d) for d in self.shape]))
 

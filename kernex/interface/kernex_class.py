@@ -22,7 +22,7 @@ from kernex.src.scan import kernelScan, offsetKernelScan
 from kernex.src.utils import ZIP
 
 
-@treeclass
+@treeclass(op=False)
 class kernexClass(dict):
 
     kernel_size: tuple[int, ...] | int = static_field()
@@ -190,7 +190,7 @@ class kernexClass(dict):
             )
 
 
-@treeclass
+@treeclass(op=False)
 class sscan(kernexClass):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -207,7 +207,7 @@ class sscan(kernexClass):
         )
 
 
-@treeclass
+@treeclass(op=False)
 class smap(kernexClass):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -224,7 +224,7 @@ class smap(kernexClass):
         )
 
 
-@treeclass
+@treeclass(op=False)
 class kscan(kernexClass):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
@@ -241,7 +241,7 @@ class kscan(kernexClass):
         )
 
 
-@treeclass
+@treeclass(op=False)
 class kmap(kernexClass):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None

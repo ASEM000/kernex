@@ -29,6 +29,7 @@ pip install pytreeclass kernex
 Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general stencil computations.
 
 ## ⏩ Quick Example <a id="QuickExample">
+
 <details><summary> Simple kernel sum  </summary>
 
 <div align="center">
@@ -48,11 +49,11 @@ x = jnp.array([1,2,3,4,5])
 print(sum_all(x))
 >>> [ 6  9 12]
 ```
+
 `jax.vmap` is used to sum each window content.
 <img src="assets/kmap_sum.png" width=400px align="center">
 
 <br><br><br><br><br><br><br><br><br><br>
-
 
 </td>
 <td>
@@ -64,8 +65,10 @@ def sum_all(x):
 
 x = jnp.array([1,2,3,4,5])
 print(sum_all(x))
->>> [ 6 13 22]
-```
+
+> > > [ 6 13 22]
+
+````
 `lax.scan` is used to update the array and the window sum is calculated sequentially.
 
 <img src="assets/kscan_sum.png" width=500px align="center">
@@ -75,7 +78,7 @@ print(sum_all(x))
 
 </div>
     </details>
-    
+
 ## 🕸️ Function mesh concept <a id="FunctionMesh">
 <details>
 
@@ -111,7 +114,8 @@ df/dx = │ 2x  │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 
         └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
 
 '''
-```
+````
+
 <div align ="center">
 <table>
 <tr>
@@ -131,7 +135,7 @@ F[1:] = lambda x:x[0]**3
 
 array = jnp.arange(1,11).astype('float32')
 print(F(array))
->>> [1., 8., 27., 64., 125., 
+>>> [1., 8., 27., 64., 125.,
 ... 216., 343., 512., 729., 1000.]
 
 print(jax.grad(lambda x:jnp.sum(F(x)))(array))
@@ -149,22 +153,23 @@ def F(x):
     f2 = lambda x:x**3
     x = x.at[0].set(f1(x[0]))
     x = x.at[1:].set(f2(x[1:]))
-    return x 
+    return x
 
 array = jnp.arange(1,11).astype('float32')
 print(F(array))
->>> [1., 8., 27., 64., 125., 
+>>> [1., 8., 27., 64., 125.,
 ... 216., 343., 512., 729., 1000.]
 
 print(jax.grad(lambda x: jnp.sum(F(x)))(array))
 >>> [2.,12.,27.,48.,75.,
 ... 108.,147.,192.,243.,300.]
 ```
+
 </td>
 </tr>
 </table>
 
-Additionally , we can combine the function mesh concept with stencil computation for scientific computing. 
+Additionally , we can combine the function mesh concept with stencil computation for scientific computing.
 See kscan section in **More examples** section
 
 </div>
@@ -183,7 +188,7 @@ from pytreeclass import treeclass,tree_viz
 import numpy as np
 import matplotlib.pyplot as plt
 
-```
+````
 
 ### `kmap`
 
@@ -198,7 +203,7 @@ import matplotlib.pyplot as plt
     padding = ('valid','same','same'))
 def kernex_conv2d(x,w):
     return jnp.sum(x*w)
-```
+````
 
 </details>
 
@@ -504,6 +509,7 @@ class Conv2D:
         return fwd_image(x)
 
 ```
+
    </details>
 
 </details>
@@ -580,5 +586,3 @@ np.testing.assert_allclose(
 ```
 
 </details>
-    
- 

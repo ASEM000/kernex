@@ -1,0 +1,53 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.10.5, pytest-7.1.2, pluggy-1.0.0
+rootdir: /Users/asem/kernex-local
+plugins: cov-3.0.0
+collected 1 item
+
+tests_and_benchmarks/test_benchmark_patch.py 
+backend name =  [CpuDevice(id=0)]
+
+[benchmarking]:	get_patch @ dim=10
+==================================================
+[kex] average : 2 us	 stddev : 9.149us
+[jax] average : 2 us	 stddev : 11.450us
+==================================================
+
+[benchmarking]:	get_patch @ dim=100
+==================================================
+[kex] average : 2 us	 stddev : 7.387us
+[jax] average : 2 us	 stddev : 6.855us
+==================================================
+
+[benchmarking]:	get_patch @ dim=1,000
+==================================================
+[kex] average : 5 us	 stddev : 13.421us
+[jax] average : 5 us	 stddev : 6.498us
+==================================================
+
+[benchmarking]:	get_patch @ dim=10,000
+==================================================
+[kex] average : 28 us	 stddev : 106.913us
+[jax] average : 56 us	 stddev : 379.398us
+==================================================
+
+[benchmarking]:	get_patch @ dim=100,000
+==================================================
+[kex] average : 146 us	 stddev : 492.585us
+[jax] average : 204 us	 stddev : 802.893us
+==================================================
+
+[benchmarking]:	get_patch @ dim=1,000,000
+==================================================
+[kex] average : 1305 us	 stddev : 12281.448us
+[jax] average : 2670 us	 stddev : 13199.638us
+==================================================
+.
+
+=============================== warnings summary ===============================
+../miniforge3/envs/dev-jax/lib/python3.10/site-packages/flatbuffers/compat.py:19
+  /Users/asem/miniforge3/envs/dev-jax/lib/python3.10/site-packages/flatbuffers/compat.py:19: DeprecationWarning: the imp module is deprecated in favour of importlib and slated for removal in Python 3.12; see the module's documentation for alternative uses
+    import imp
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========================= 1 passed, 1 warning in 8.96s =========================

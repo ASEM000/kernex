@@ -14,6 +14,9 @@ mat = lambda *args: jnp.arange(1, reduce(lambda x, y: x * y, args) + 1).reshape(
 
 def test_and_time_conv2d():
 
+    print()
+    print("backend name = ", jax.devices())
+
     iters = 1000
 
     dims = list(

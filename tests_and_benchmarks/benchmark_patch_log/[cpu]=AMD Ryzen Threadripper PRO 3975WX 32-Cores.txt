@@ -1,0 +1,53 @@
+=================================================== test session starts ===================================================
+platform linux -- Python 3.8.10, pytest-7.1.2, pluggy-1.0.0
+rootdir: /root/kernex
+plugins: anyio-3.6.1
+collected 1 item
+
+kernex/tests_and_benchmarks/test_benchmark_patch.py 
+backend name =  [CpuDevice(id=0)]
+
+[benchmarking]:	get_patch @ dim=10
+==================================================
+[kex] average : 3 us	 stddev : 9.356us
+[jax] average : 3 us	 stddev : 6.824us
+==================================================
+
+[benchmarking]:	get_patch @ dim=100
+==================================================
+[kex] average : 4 us	 stddev : 13.772us
+[jax] average : 4 us	 stddev : 7.843us
+==================================================
+
+[benchmarking]:	get_patch @ dim=1,000
+==================================================
+[kex] average : 6 us	 stddev : 11.888us
+[jax] average : 6 us	 stddev : 6.886us
+==================================================
+
+[benchmarking]:	get_patch @ dim=10,000
+==================================================
+[kex] average : 27 us	 stddev : 14.359us
+[jax] average : 63 us	 stddev : 92.630us
+==================================================
+
+[benchmarking]:	get_patch @ dim=100,000
+==================================================
+[kex] average : 115 us	 stddev : 256.520us
+[jax] average : 295 us	 stddev : 272.982us
+==================================================
+
+[benchmarking]:	get_patch @ dim=1,000,000
+==================================================
+[kex] average : 434 us	 stddev : 1390.341us
+[jax] average : 4034 us	 stddev : 1679.106us
+==================================================
+.
+
+==================================================== warnings summary =====================================================
+../usr/local/lib/python3.8/dist-packages/flatbuffers/compat.py:19
+  /usr/local/lib/python3.8/dist-packages/flatbuffers/compat.py:19: DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
+    import imp
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================================== 1 passed, 1 warning in 6.20s ===============================================

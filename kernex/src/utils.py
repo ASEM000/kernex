@@ -46,47 +46,8 @@ def offset_to_padding(input_argument, kernel_size):
     return tuple(padding)
 
 
-# @functools.partial(jax.jit,static_argnums=(1,))
-# def kron_broadcast(array:jnp.ndarray,kernel_size:tuple[int,...]):
-#   '''
-#       --- Explanation
-#           broadcast input array by kernel_size shape on last axes
-
-#       --- Example
-#       >>> kron_broadcast(mat(3,3) , (5,5)).shape
-#       ... (3,3,5,5)
-
-#   '''
-#   array   = jnp.expand_dims(array,axis=np.arange(-1,-len(kernel_size)-1,-1))
-#   return jnp.kron(array,jnp.ones(kernel_size))
-
-
-@jax.jit
 @functools.partial(jax.profiler.annotate_function, name="roll_view")
 def roll_view(array: jnp.ndarray) -> jnp.ndarray:
-    """
-    *** Explanation
-        Given an n-dimesional array , rearrange the elements of
-        array to set the center element to top left of the array
-
-    *** Args
-        array : jnp array
-
-    *** Output
-        jnp array
-
-    *** Examples
-
-    >>> jnp.arange(1,6)     , roll_view(jnp.arange(1,6))
-        (1   2   3   4   5) , (3   4   5   1   2)
-
-    >>> mat = lambda n,m : jnp.arange(1,n*m+1).reshape(n,m)
-    >>> mat(3,3)  , roll_view(mat(3,3))
-        1   2   3     5   6   4
-        4   5   6     8   9   7
-        7   8   9     2   3   1
-
-    """
     shape = jnp.array(array.shape)
     axes = tuple(range(len(shape)))  # list all axes
     shift = tuple(

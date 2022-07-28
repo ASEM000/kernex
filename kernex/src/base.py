@@ -27,8 +27,6 @@ class kernelOperation:
 
         Returns:
             padding value passed to `pad_width` in `jnp.pad`
-
-        Example :
         """
         return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in self.border)
 
@@ -96,7 +94,3 @@ class kernelOperation:
             view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) // 2]
             for i, wi in enumerate(self.kernel_size)
         )
-
-    # @staticmethod
-    # def patch_from_view(view,array):
-    #     return array[ix_(*view)]

@@ -15,24 +15,18 @@ from kernex.src.utils import ZIP, ix_, offset_to_padding, roll_view
 @treeclass(op=False)
 class baseKernelMap(kernelOperation):
     def __post_init__(self):
-        if len(self.funcs) == 1:
-            self.__call__ = self.__single_call__
-
-        else:
-            self.__call__ = self.__multi_call__
+        self.__call__ = (
+            self.__single_call__ if len(self.funcs) == 1 else self.__multi_call__
+        )
 
     def reduce_map_func(self, func, *args, **kwargs) -> Callable:
         if self.relative:
-
-            def reduce_map_func_callable(view, array):
-                return func(roll_view(array[ix_(*view)]), *args, **kwargs)
+            return lambda view, array: func(
+                roll_view(array[ix_(*view)]), *args, **kwargs
+            )
 
         else:
-
-            def reduce_map_func_callable(view, array):
-                return func(array[ix_(*view)], *args, **kwargs)
-
-        return reduce_map_func_callable
+            return lambda view, array: func(array[ix_(*view)], *args, **kwargs)
 
     def __single_call__(self, array, *args, **kwargs):
 

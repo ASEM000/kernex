@@ -21,15 +21,13 @@ from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
 from kernex.src.utils import ZIP
 
-borderType = tuple[int, ...] | tuple[tuple[int, int], ...] | int | str
-
 
 @treeclass(op=False)
 class kernelInterface:
 
     kernel_size: tuple[int, ...] | int = static_field()
     strides: tuple[int, ...] | int = static_field(default=1)
-    border: borderType = static_field(default=0, repr=False)  # fmt: skip
+    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = static_field(default=0, repr=False)  # fmt: skip
     relative: bool = static_field(default=False)
     inplace: bool = static_field(default=False)
     use_offset: bool = static_field(default=False)

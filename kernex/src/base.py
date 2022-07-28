@@ -18,7 +18,7 @@ from kernex.src.utils import (
 
 @treeclass(op=False)
 class kernelOperation:
-    """base class all kernel operations"""
+    """base class for all kernel operations"""
 
     func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...], ...]] = static_field()  # fmt: skip
     shape: tuple[int, ...] = static_field()
@@ -29,10 +29,22 @@ class kernelOperation:
 
     @cached_property
     def pad_width(self):
+        """Calcuate the positive padding from border value
+
+        Returns:
+            padding value passed to `pad_width` in `jnp.pad`
+        
+        Example :
+        """
         return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in self.border)
 
     @cached_property
     def output_shape(self):
+        """Calculate the resultant output shape given 
+
+        Returns:
+            _type_: _description_
+        """
         return tuple(
             (xi + (li + ri) - ki) // si + 1
             for xi, ki, si, (li, ri) in ZIP(

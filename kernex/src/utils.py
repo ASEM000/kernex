@@ -48,6 +48,17 @@ def offset_to_padding(input_argument, kernel_size):
 
 @functools.partial(jax.profiler.annotate_function, name="roll_view")
 def roll_view(array: jnp.ndarray) -> jnp.ndarray:
+    """Roll view along all axes
+
+    Example:
+    >>> x = jnp.arange(1,26).reshape(5,5)
+    >>> print(roll_view(x))
+        [[13 14 15 11 12]
+        [18 19 20 16 17]
+        [23 24 25 21 22]
+        [ 3  4  5  1  2]
+        [ 8  9 10  6  7]]
+    """
     shape = jnp.array(array.shape)
     axes = tuple(range(len(shape)))  # list all axes
     shift = tuple(
@@ -68,20 +79,61 @@ def ix_(*args):
 
 
 @functools.partial(jax.profiler.annotate_function, name="general_arange")
-def general_arange(di: int, ki: int, si: int, x0: int, xf: int):
+def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
+    """Calculate the windows indices for a given dimension.
+
+    Args:
+        di (int): shape of the dimension
+        ki (int): kernel size
+        si (int): stride
+        x0 (int): left padding
+        xf (int): rght padding
+
+    Returns:
+        jnp.ndarray: array of windows indices
+    
+    Example:
+        >>> di = 5  
+        >>> ki = 3
+        >>> si = 1
+        >>> x0 = 0 
+        >>> xf = 0
+        >>> print(general_arange(di, ki, si, x0, xf))
+            [[0 1 2]
+            [1 2 3]
+            [2 3 4]]
+    """
     start, end = -x0 + ((ki - 1) // 2), di + xf - (ki // 2)
     size = end - start
     lhs = jax.lax.broadcasted_iota(dtype=jnp.int32, shape=(size, ki), dimension=0) + (start)  # fmt: skip
     rhs = jax.lax.broadcasted_iota(dtype=jnp.int32, shape=(ki, size), dimension=0).T - ((ki - 1) // 2)  # fmt: skip
     res = lhs + rhs
 
+    # res[::si] is slightly slower.
     return (res) if si == 1 else (res)[::si]
 
 
 @functools.partial(jax.profiler.annotate_function, name="general_product")
 def general_product(*args):
-    """`itertools.product` for arrays"""
+    """Equivalent to tuple(zip(*itertools.product(*args)))` for arrays
+    
+    Example:
+    >>> general_product(
+    ... jnp.array([[1,2],[3,4]]),
+    ... jnp.array([[5,6],[7,8]]))
+    (
+        DeviceArray([[[1, 2],[1, 2]],[[3, 4],[3, 4]]], dtype=int32),
+        DeviceArray([[[5, 6],[7, 8]],[[5, 6],[7, 8]]], dtype=int32)
+    )
 
+
+    >>> tuple(zip(*(itertools.product([[1,2],[3,4]],[[5,6],[7,8]]))))
+    (
+        ([1, 2], [1, 2], [3, 4], [3, 4]), 
+        ([5, 6], [7, 8], [5, 6], [7, 8])
+    )
+    
+    """
     def nvmap(n):
         in_axes = [None] * len(args)
         in_axes[-n] = 0

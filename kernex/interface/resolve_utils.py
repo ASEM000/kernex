@@ -1,75 +1,91 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Any, Callable
+
+import jax
+import jax.numpy as jnp
+from pytreeclass.src.decorator_util import dispatch
 
 # ---------------------- resolve_arguments ------------------------ #
 
 
+@dispatch(argnum=0)
 def resolve_padding_argument(
     input_argument: tuple[int | tuple[int, int] | str, ...] | int | str,
     kernel_size: tuple[int, ...],
 ):
     """Helper function to generate padding"""
+    ...
+
+
+@resolve_padding_argument.register(tuple)
+def _(input_argument, kernel_size):
     same = lambda wi: ((wi - 1) // 2, wi // 2)
+    assert len(input_argument) == len(kernel_size), (
+        "kernel_size dimension != padding dimension.",
+        f"Found length(kernel_size)={len(kernel_size)} length(padding)={len(input_argument)}",
+    )
 
-    if isinstance(input_argument, tuple):
+    padding = [[]] * len(kernel_size)
 
-        assert len(input_argument) == len(kernel_size), (
-            "kernel_size dimension != padding dimension.",
-            f"Found length(kernel_size)={len(kernel_size)} length(padding)={len(input_argument)}",
-        )
+    for i, item in enumerate(input_argument):
 
-        padding = [[]] * len(kernel_size)
+        if isinstance(item, int):
+            padding[i] = (item, item)
 
-        for i, item in enumerate(input_argument):
-            if isinstance(item, int):
-                padding[i] = (item, item)
+        elif isinstance(item, tuple):
+            padding[i] = item
 
-            elif isinstance(item, tuple):
-                padding[i] = item
+        elif isinstance(item, str):
+            if item in ["same", "SAME"]:
+                padding[i] = same(kernel_size[i])
 
-            elif isinstance(item, str):
-                if item in ["same", "SAME"]:
-                    padding[i] = same(kernel_size[i])
+            elif item in ["valid", "VALID"]:
+                padding[i] = (0, 0)
 
-                elif item in ["valid", "VALID"]:
-                    padding[i] = (0, 0)
-
-                else:
-                    raise ValueError(
-                        f'string argument must be in ["same","SAME","VALID","valid"].Found {item}'
-                    )
-
-    elif isinstance(input_argument, str):
-
-        if input_argument in ["same", "SAME", "Same"]:
-            return tuple(same(wi) for wi in kernel_size)
-
-        elif input_argument in ["valid", "VALID", "Valid"]:
-            return ((0, 0),) * len(kernel_size)
-
-        else:
-            raise ValueError(
-                f'string argument must be in ["same","SAME","VALID","valid"].Found {input_argument}'
-            )
-
-    elif isinstance(input_argument, int):
-        padding = ((input_argument, input_argument),) * len(kernel_size)
-
+            else:
+                raise ValueError(
+                    f'string argument must be in ["same","SAME","VALID","valid"].Found {item}'
+                )
     return tuple(padding)
 
 
-def resolve_dict_argument(input_dict: dict[str, int], dim: int, default):
-    """
-    --- Explanation
-        return a tuple that map values of dict into tuple
+@resolve_padding_argument.register(str)
+def _(input_argument, kernel_size):
+    same = lambda wi: ((wi - 1) // 2, wi // 2)
+    if input_argument in ["same", "SAME", "Same"]:
+        return tuple(same(wi) for wi in kernel_size)
 
-    --- Examples
-    >>> resolve_dict_argument({0:1,1:2,2:3},dim=3,default=0) -> (1,2,3)
-    >>> resolve_dict_argument({1:2,0:1,2:3},dim=3,default=0) -> (1,2,3)
-    >>> resolve_dict_argument({0:1},dim=3,default=0) -> (1,0,0)
-    >>> resolve_dict_argument({0:(1,0)},dim=3,default=0) -> ((1,0),(0,0),(0,0)) # tuple is inferred
+    elif input_argument in ["valid", "VALID", "Valid"]:
+        return ((0, 0),) * len(kernel_size)
 
+    else:
+        raise ValueError(
+            f'string argument must be in ["same","SAME","VALID","valid"].Found {input_argument}'
+        )
+
+
+@resolve_padding_argument.register(int)
+def _(input_argument, kernel_size):
+    return ((input_argument, input_argument),) * len(kernel_size)
+
+
+def resolve_dict_argument(
+    input_dict: dict[str, int], dim: int, default: Any
+) -> dict[Any:Any]:
+
+    """return a tuple that map values of dict into tuple
+
+    Args:
+        input_dict (dict[str, int]): named_axis dict
+        dim (int): dimension of the output tuple
+        default (Any): default value of the output tuple
+
+    Example:
+        >>> resolve_dict_argument({0:1,1:2,2:3},dim=3,default=0) -> (1,2,3)
+        >>> resolve_dict_argument({1:2,0:1,2:3},dim=3,default=0) -> (1,2,3)
+        >>> resolve_dict_argument({0:1},dim=3,default=0) -> (1,0,0)
+        >>> resolve_dict_argument({0:(1,0)},dim=3,default=0) -> ((1,0),(0,0),(0,0)) # tuple is inferred
     """
     # assign mutable list
     temp = [default] * dim
@@ -80,55 +96,78 @@ def resolve_dict_argument(input_dict: dict[str, int], dim: int, default):
     return tuple(temp)
 
 
+@dispatch(argnum=0)
 def resolve_offset_argument(input_argument, kernel_size):
-    if isinstance(input_argument, int):
-        return [(input_argument, input_argument)] * len(kernel_size)
+    raise NotImplementedError(
+        "input_argument type={} is not implemented".format(type(input_argument))
+    )
 
-    elif isinstance(input_argument, Sequence):
 
-        offset = [[]] * len(kernel_size)
+@resolve_offset_argument.register(int)
+def _(input_argument, kernel_size):
+    return [(input_argument, input_argument)] * len(kernel_size)
 
-        for i, item in enumerate(input_argument):
-            offset[i] = (item, item) if isinstance(item, int) else item
 
-        return offset
+@resolve_offset_argument.register(list)
+@resolve_offset_argument.register(tuple)
+def _(input_argument, kernel_size):
+    offset = [[]] * len(kernel_size)
+
+    for i, item in enumerate(input_argument):
+        offset[i] = (item, item) if isinstance(item, int) else item
+
+    return offset
 
 
 def resolve_index(index, shape):
-    """
-    --- Explanation
-        handles int and slice input arguments
+    """Resolve index to a tuple of int"""
 
-    --- Examples
-    >>> resolve_index((3,1,slice(None,None,None)))
-        [3, 1, (0, inf, 1)]
+    @dispatch(argnum=0)
+    def resolve_index_step(index, shape):
+        raise NotImplementedError(f"index type={type(index)} is not implemented")
 
-    """
+    @resolve_index_step.register(int)
+    def _(index, shape):
+        index += shape if index < 0 else 0
+        return index
+
+    @resolve_index_step.register(slice)
+    def _(index, shape):
+        start, end, step = index.start, index.stop, index.step
+
+        start = start or 0
+        start += shape if start < 0 else 0
+
+        end = end or shape
+        end += shape if end < 0 else 0
+
+        step = step or 1
+
+        return (start, end, step)
+
+    @resolve_index_step.register(list)
+    @resolve_index_step.register(tuple)
+    def _(index, shape):
+        assert all(
+            isinstance(i, int) for i in jax.tree_util.tree_leaves(index)
+        ), "All items in tuple must be int"
+        return index
 
     index = [index] if not isinstance(index, tuple) else index
     resolved_index = [[]] * len(index)
 
     for i, (item, in_dim) in enumerate(zip(index, shape)):
-        if isinstance(item, slice):
-            start, end, step = item.start, item.stop, item.step
-
-            start = start or 0
-            start += in_dim if start < 0 else 0
-
-            end = end or in_dim
-            end += in_dim if end < 0 else 0
-
-            step = step or 1
-
-            resolved_index[i] = (start, end, step)
-
-        # reduce [index] -> index
-        elif isinstance(item, int):
-            item += in_dim if item < 0 else 0
-            # (item,item+1,1)
-            resolved_index[i] = item
-
-        else:
-            raise ValueError("type is not understood")
+        resolved_index[i] = resolve_index_step(item, in_dim)
 
     return resolved_index
+
+
+def normalize_slices(
+    container: dict[Callable[Any], jnp.ndarray], in_dim: tuple[int, ...]
+) -> dict[Callable[Any], jnp.ndarray]:
+    """Convert slice with partial range to tuple with determined range"""
+
+    for func, slices in container.items():
+        slices = [resolve_index(index, in_dim) for index in slices]
+        container[func] = slices
+    return container

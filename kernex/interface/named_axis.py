@@ -12,7 +12,7 @@ from typing import Callable
 import jax.numpy as jnp
 
 
-class sorted_dict(dict):
+class sortedDict(dict):
     """a class that sort a key before setting or getting an item"""
 
     def __getitem__(self, key: tuple[str, ...]):
@@ -36,7 +36,7 @@ def generate_named_axis(
 
     --- Output
         [1] fully named axes (len(keys)==len(kernel_size ))
-            return sorted_dict object , where keys order is insignificant ( A['a','b']==A['b','a'])
+            return sortedDict object , where keys order is insignificant ( A['a','b']==A['b','a'])
 
         [2] partially named axes (len(keys)<len(kernel_size s))
             return dictionary object where key order matters.
@@ -132,7 +132,7 @@ def generate_named_axis(
     keys = product(*keys)
 
     # reserve order if the named_axis are partially passed , otherwise its not order
-    return_dict = dict() if partial_naming else sorted_dict()
+    return_dict = dict() if partial_naming else sortedDict()
 
     # multiply [-m,...,m ] x [-n,...n] = [(-m,n) (-m,n-1) , .. ] to get the mesh integer indices
     vals = product(*vals)

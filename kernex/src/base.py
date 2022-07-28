@@ -9,12 +9,14 @@ from pytreeclass.src.decorator_util import cached_property
 
 from kernex.src.utils import ZIP, general_arange, general_product, key_search
 
+funcDict = dict[Callable[[Any, ...], jnp.ndarray] : tuple[int, ...]]
+
 
 @treeclass(op=False)
 class kernelOperation:
     """base class for all kernel operations"""
 
-    func_dict: dict[Callable[[Any], jnp.ndarray:tuple[int, ...], ...]] = static_field()  # fmt: skip
+    func_dict: funcDict = static_field()  # fmt: skip
     shape: tuple[int, ...] = static_field()
     kernel_size: tuple[int, ...] = static_field()
     strides: tuple[int, ...] = static_field()

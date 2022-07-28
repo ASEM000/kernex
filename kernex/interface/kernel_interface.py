@@ -13,7 +13,7 @@ from pytreeclass import static_field, treeclass
 
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
-    resolve_index,
+    normalize_slices,
     resolve_offset_argument,
     resolve_padding_argument,
 )
@@ -21,96 +21,73 @@ from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
 from kernex.src.utils import ZIP
 
+borderType = tuple[int, ...] | tuple[tuple[int, int], ...] | int | str
+
 
 @treeclass(op=False)
-class kernexClass(dict):
+class kernelInterface:
 
     kernel_size: tuple[int, ...] | int = static_field()
     strides: tuple[int, ...] | int = static_field(default=1)
-    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = static_field(default=0, repr=False)  # fmt: skip
+    border: borderType = static_field(default=0, repr=False)  # fmt: skip
     relative: bool = static_field(default=False)
     inplace: bool = static_field(default=False)
     use_offset: bool = static_field(default=False)
     named_axis: dict[int, str] | None = static_field(default=None)
+    container: dict[Callable, slice | int] = static_field(default_factory=dict)
 
     def __post_init__(self):
+        """resolve the border values and the kernel operation"""
 
-        self.border = (
-            resolve_offset_argument if self.use_offset else resolve_padding_argument
-        )(self.border, self.kernel_size)
-
-        if self.inplace:
-            self.kernel_op = offsetKernelScan if self.use_offset else kernelScan
+        if self.use_offset:
+            self.border = resolve_offset_argument(self.border, self.kernel_size)
+            self.kernel_op = offsetKernelScan if self.inplace else offsetKernelMap
 
         else:
-            self.kernel_op = offsetKernelMap if self.use_offset else kernelMap
-
-        self.__resolved__ = False
+            self.border = resolve_padding_argument(self.border, self.kernel_size)
+            self.kernel_op = kernelScan if self.inplace else kernelMap
 
     def __post_resolutions__(self):
+        """Resolve the kernel size and strides"""
 
-        if self.__resolved__:
-            return
+        for kw, arg in zip(
+            ["kernel_size", "strides"], [self.kernel_size, self.strides]
+        ):
+            if isinstance(arg, tuple):
 
-        self.__resolved__ = True
+                assert all(isinstance(wi, int) for wi in arg), (
+                    f"{kw}  input must be a tuple of int.\n"
+                    f"Found {tuple(type(wi) for wi in arg  )}"
+                )
 
-        if isinstance(self.kernel_size, tuple):
-            assert all(isinstance(wi, int) for wi in self.kernel_size), (
-                "kernel_size  input must be a tuple of int.\n",
-                f"Found {tuple(type(wi) for wi in self.kernel_size  )}",
-            )
+                assert len(arg) == len(self.shape), (
+                    f"{kw}  dimension must be equal to array dimension.",
+                    f"Found len({arg }) != len{(self.shape)}",
+                )
 
-            assert len(self.kernel_size) == len(self.shape), (
-                "kernel_size  dimension must be equal to array dimension.",
-                f"Found len({self.kernel_size }) != len{(self.shape)}",
-            )
+                assert all(
+                    ai <= si for (ai, si) in zip(self.kernel_size, self.shape)
+                ), (
+                    f"{kw} shape must be less than array shape.\n",
+                    f"Found {kw}  = {arg } array shape = {self.shape} ",
+                )
 
-            assert all(ai <= si for (ai, si) in zip(self.kernel_size, self.shape)), (
-                "kernel_size  shape must be less than array shape.\n",
-                f"Found kernel_size  = {self.kernel_size } array shape = {self.shape} ",
-            )
+                if kw == "kernel_size":
+                    # convert kernel_size  = -1 to shape dimension
+                    self.__dict__[kw] = tuple(
+                        si if wi == -1 else wi
+                        for si, wi in ZIP(self.shape, self.kernel_size)
+                    )
 
-            # convert kernel_size  = -1 to shape dimension
-            self.kernel_size = tuple(
-                si if wi == -1 else wi for si, wi in ZIP(self.shape, self.kernel_size)
-            )
+            elif isinstance(arg, int):
+                self.__dict__[kw] = (self.__dict__[kw],) * len(self.shape)
 
-        elif isinstance(self.kernel_size, int):
-            self.kernel_size = (self.kernel_size,) * len(self.shape)
+            else:
+                raise ValueError(
+                    f"{kw}  must be instance of int or tuple. Found {type(self.__dict__[kw])}"
+                )
 
-        else:
-            raise ValueError(
-                f"kernel_size  must be instance of int or tuple. Found {type(self.kernel_size )}"
-            )
-
-        if isinstance(self.strides, tuple):
-            assert all(isinstance(wi, int) for wi in self.strides), (
-                "strides  input must be a tuple of int.",
-                f" Found {tuple(type(wi) for wi in self.strides)}",
-            )
-
-            assert len(self.strides) == len(self.shape), (
-                "strides  dimension must be equal to array dimension.",
-                f"Found len({self.strides }) != len{(self.shape)}",
-            )
-
-            assert all(ai <= si for (ai, si) in zip(self.strides, self.shape)), (
-                "strides  shpae must be less than array shape.\n",
-                f"Found strides  = {self.strides } array shape = {self.shape}",
-            )
-
-        elif isinstance(self.strides, int):
-            self.strides = (self.strides,) * len(self.shape)
-
-        else:
-            raise ValueError(
-                f"strides  must be instance of int or tuple. Found {type(self.strides )}"
-            )
-
-        # normalize slices
-        for func, slices in self.items():
-            slices = [resolve_index(index, self.shape) for index in slices]
-            super().__setitem__(func, slices)
+        self.__post_resolutions__ = lambda: None
 
     def __setitem__(self, index, func):
 
@@ -118,20 +95,18 @@ class kernexClass(dict):
             func, Callable
         ), f"Input must be of type Callable. Found {type(func)}"
 
-        if func in self:
-            index = self[func] + [index]
-            super().__setitem__(func, index)
-
-        else:
-            super().__setitem__(func, [index])
+        self.container[func] = [*self.container.get(func, []), index]
 
     def __mesh_call__(self, array, *args, **kwargs):
 
         self.shape = array.shape
+
         self.__post_resolutions__()
+        self.container = normalize_slices(self.container, self.shape)
+
         self.func_dict = {}
 
-        for (func, index) in self.items():
+        for (func, index) in self.container.items():
 
             if func is not None and self.named_axis is not None:
                 transformed_function = named_axis_wrapper(
@@ -191,7 +166,7 @@ class kernexClass(dict):
 
 
 @treeclass(op=False)
-class sscan(kernexClass):
+class sscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
     ):
@@ -208,7 +183,7 @@ class sscan(kernexClass):
 
 
 @treeclass(op=False)
-class smap(kernexClass):
+class smap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
     ):
@@ -225,7 +200,7 @@ class smap(kernexClass):
 
 
 @treeclass(op=False)
-class kscan(kernexClass):
+class kscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
     ):
@@ -242,7 +217,7 @@ class kscan(kernexClass):
 
 
 @treeclass(op=False)
-class kmap(kernexClass):
+class kmap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
     ):

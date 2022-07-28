@@ -9,7 +9,7 @@ from pytreeclass.src.decorator_util import cached_property
 
 from kernex.src.utils import ZIP, general_arange, general_product, key_search
 
-funcDict = dict[Callable[[Any, ...], jnp.ndarray] : tuple[int, ...]]
+funcDict = dict[Callable[[Any], jnp.ndarray] : tuple[int, ...]]
 
 
 @treeclass(op=False)

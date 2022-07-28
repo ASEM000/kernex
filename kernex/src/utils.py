@@ -147,6 +147,25 @@ def general_product(*args):
     return nvmap(len(args))(*args)
 
 
+def index_from_view(
+    view: tuple[jnp.ndarray, ...], kernel_size: tuple[int, ...]
+) -> tuple[int, ...]:
+    """Get the index of array from the view
+
+    Args:
+        view (tuple[jnp.ndarray,...]): patch indices for each dimension
+        kernel_size (tuple[int,...]): kernel size for each dimension
+
+    Returns:
+        tuple[int, ...]: index as a tuple of int for each dimension
+    """
+
+    return tuple(
+        view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) // 2]
+        for i, wi in enumerate(kernel_size)
+    )
+
+
 def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool:
     """check if index as array x is in the range of index as array y for all dimensions
 
@@ -183,7 +202,7 @@ def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool:
     return jnp.all(jnp.array([compare_key_item(xi, yi) for (xi, yi) in zip(x, y)]))
 
 
-def key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray, ...]) -> int:
+def key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray]) -> int:
     """returns the index of the key in the keys array if key is within the key range or equal to it.
 
     Args:

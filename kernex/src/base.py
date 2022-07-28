@@ -7,13 +7,7 @@ from jax import numpy as jnp
 from pytreeclass import static_field, treeclass
 from pytreeclass.src.decorator_util import cached_property
 
-from kernex.src.utils import (
-    ZIP,
-    general_arange,
-    general_product,
-    index_from_view,
-    key_search,
-)
+from kernex.src.utils import ZIP, general_arange, general_product, key_search
 
 
 @treeclass(op=False)
@@ -79,9 +73,7 @@ class kernelOperation:
         Returns:
             int: function index in the `func_dict.values()`
         """
-        return key_search(
-            key=tuple(index_from_view(view, self.kernel_size)), keys=self.slices
-        )
+        return key_search(key=tuple(self.index_from_view(view)), keys=self.slices)
 
     @property
     def funcs(self) -> tuple[Callable[[Any], jnp.ndarray]]:

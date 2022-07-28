@@ -91,12 +91,12 @@ def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
 
     Returns:
         jnp.ndarray: array of windows indices
-    
+
     Example:
-        >>> di = 5  
+        >>> di = 5
         >>> ki = 3
         >>> si = 1
-        >>> x0 = 0 
+        >>> x0 = 0
         >>> xf = 0
         >>> print(general_arange(di, ki, si, x0, xf))
             [[0 1 2]
@@ -116,7 +116,7 @@ def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
 @functools.partial(jax.profiler.annotate_function, name="general_product")
 def general_product(*args):
     """Equivalent to tuple(zip(*itertools.product(*args)))` for arrays
-    
+
     Example:
     >>> general_product(
     ... jnp.array([[1,2],[3,4]]),
@@ -129,11 +129,12 @@ def general_product(*args):
 
     >>> tuple(zip(*(itertools.product([[1,2],[3,4]],[[5,6],[7,8]]))))
     (
-        ([1, 2], [1, 2], [3, 4], [3, 4]), 
+        ([1, 2], [1, 2], [3, 4], [3, 4]),
         ([5, 6], [7, 8], [5, 6], [7, 8])
     )
-    
+
     """
+
     def nvmap(n):
         in_axes = [None] * len(args)
         in_axes[-n] = 0
@@ -146,16 +147,27 @@ def general_product(*args):
     return nvmap(len(args))(*args)
 
 
-def index_from_view(view, kernel_size):
-    """get array index from a given `view` and `kernel_size`"""
-    return tuple(
-        view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) // 2]
-        for i, wi in enumerate(kernel_size)
-    )
+def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool:
+    """check if index as array x is in the range of index as array y for all dimensions
 
+    Args:
+        x (jnp.ndarray): lhs index
+        y (jnp.ndarray): rhs index
 
-def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]):
-    def compare_key_item(xi: jnp.ndarray, yi: jnp.ndarray) -> jnp.ndarray:
+    Returns:
+        bool: if x in range(y) or x == y
+    """
+
+    def compare_key_item(xi: jnp.ndarray, yi: jnp.ndarray) -> bool:
+        """check if index as array xi is in the range of index as array yi for single dimension
+
+        Args:
+            xi (jnp.ndarray): lhs index
+            yi (jnp.ndarray): rhs index
+
+        Returns:
+            bool: if xi in range(yi) or xi == yi
+        """
         # index style = (start,end,step)
         if yi.size == 3:
             return (yi[0] <= xi) * (xi < yi[1]) * (xi % yi[2] == 0)
@@ -171,22 +183,19 @@ def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]):
     return jnp.all(jnp.array([compare_key_item(xi, yi) for (xi, yi) in zip(x, y)]))
 
 
-def key_search(key, keys):
-    """
-    === Explanation
+def key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray, ...]) -> int:
+    """returns the index of the key in the keys array if key is within the key range or equal to it.
 
+    Args:
+        key (tuple[jnp.ndarray,...]):
+            a tuple of jnp.arrays for each dimension ( {dim0},...,{dimN}) with size({dim}) == 1
 
-    === Args
-        lhs_key :
-        a tuple of jnp.arrays for each dimension ( {dim0},...,{dimN}) with size({dim}) == 1
+        keys (tuple[jnp.ndarray):
+            a tuple of jnp.arrays for range of each dimension
+            ( {dim0},...,{dimN}) with size({dim})with size ({dim}) in [1,2,3]
 
-        rhs_key :
-        a tuple of jnp.arrays for range of each dimension ( {dim0},...,{dimN}) with size({dim})
-        with size ({dim}) in [1,2,3]
-
-    === Example
-        >>> compare_key((jnp.array([1]),),(jnp.array([0,2,1]))) # 1 in [0,2)
-        True
+    Returns:
+        int: index of the key in the keys array
     """
 
     length = len(keys)

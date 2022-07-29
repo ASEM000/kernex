@@ -14,12 +14,13 @@ from pytreeclass import static_field, treeclass
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
     normalize_slices,
+    resolve_kernel_size,
     resolve_offset_argument,
     resolve_padding_argument,
+    resolve_strides,
 )
 from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
-from kernex.src.utils import ZIP
 
 
 @treeclass(op=False)
@@ -45,78 +46,37 @@ class kernelInterface:
             self.border = resolve_padding_argument(self.border, self.kernel_size)
             self.kernel_op = kernelScan if self.inplace else kernelMap
 
-    def __post_resolutions__(self):
-        """Resolve the kernel size and strides"""
-
-        for kw, arg in zip(
-            ["kernel_size", "strides"], [self.kernel_size, self.strides]
-        ):
-            if isinstance(arg, tuple):
-
-                assert all(isinstance(wi, int) for wi in arg), (
-                    f"{kw}  input must be a tuple of int.\n"
-                    f"Found {tuple(type(wi) for wi in arg  )}"
-                )
-
-                assert len(arg) == len(self.shape), (
-                    f"{kw}  dimension must be equal to array dimension.",
-                    f"Found len({arg }) != len{(self.shape)}",
-                )
-
-                assert all(
-                    ai <= si for (ai, si) in zip(self.kernel_size, self.shape)
-                ), (
-                    f"{kw} shape must be less than array shape.\n",
-                    f"Found {kw}  = {arg } array shape = {self.shape} ",
-                )
-
-                if kw == "kernel_size":
-                    # convert kernel_size  = -1 to shape dimension
-                    self.__dict__[kw] = tuple(
-                        si if wi == -1 else wi
-                        for si, wi in ZIP(self.shape, self.kernel_size)
-                    )
-
-            elif isinstance(arg, int):
-                self.__dict__[kw] = (self.__dict__[kw],) * len(self.shape)
-
-            else:
-                raise ValueError(
-                    f"{kw}  must be instance of int or tuple. Found {type(self.__dict__[kw])}"
-                )
-
-        self.__post_resolutions__ = lambda: None
-
     def __setitem__(self, index, func):
 
         assert isinstance(
             func, Callable
         ), f"Input must be of type Callable. Found {type(func)}"
 
+        # append slice/index to func key list
         self.container[func] = [*self.container.get(func, []), index]
 
     def __mesh_call__(self, array, *args, **kwargs):
+        # TODO : run once resolve_kernel_size/resolve_strides
 
         self.shape = array.shape
-
-        self.__post_resolutions__()
+        self.kernel_size = resolve_kernel_size(self.kernel_size, self.shape)
+        self.strides = resolve_strides(self.strides, self.shape)
         self.container = normalize_slices(self.container, self.shape)
-
-        self.func_dict = {}
+        self.resolved_container = {}
 
         for (func, index) in self.container.items():
 
             if func is not None and self.named_axis is not None:
-                transformed_function = named_axis_wrapper(
-                    self.kernel_size, self.named_axis
-                )(func)
-                self.func_dict[transformed_function] = index
+                resolved_func = named_axis_wrapper(self.kernel_size, self.named_axis)(
+                    func
+                )
+                self.resolved_container[resolved_func] = index
 
             else:
-                self.func_dict[func] = index
+                self.resolved_container[func] = index
 
         return self.kernel_op(
-            self.func_dict,
+            self.resolved_container,
             self.shape,
             self.kernel_size,
             self.strides,
@@ -127,16 +87,19 @@ class kernelInterface:
     def __decorator_call__(self, func):
         def call(array, *args, **kwargs):
 
+            # TODO : run once resolve_kernel_size/resolve_strides
             self.shape = array.shape
-            self.__post_resolutions__()
-            self.func_dict = {
+            self.kernel_size = resolve_kernel_size(self.kernel_size, self.shape)
+            self.strides = resolve_strides(self.strides, self.shape)
+
+            self.resolved_container = {
                 named_axis_wrapper(self.kernel_size, self.named_axis)(func)
                 if self.named_axis is not None
                 else func: ()
             }
 
             return self.kernel_op(
-                self.func_dict,
+                self.resolved_container,
                 self.shape,
                 self.kernel_size,
                 self.strides,
@@ -157,7 +120,7 @@ class kernelInterface:
         else:
             raise ValueError(
                 (
-                    "expected jnp.ndarray or Callable for the first argument.",
+                    "Expected `jnp.ndarray` or `Callable` for the first argument.",
                     f" Found {tuple(*args,**kwargs)}",
                 )
             )

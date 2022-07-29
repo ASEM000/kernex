@@ -6,6 +6,8 @@ import jax
 import jax.numpy as jnp
 from pytreeclass.src.decorator_util import dispatch
 
+from kernex.src.utils import ZIP
+
 # ---------------------- resolve_arguments ------------------------ #
 
 
@@ -21,6 +23,7 @@ def resolve_padding_argument(
 @resolve_padding_argument.register(tuple)
 def _(input_argument, kernel_size):
     same = lambda wi: ((wi - 1) // 2, wi // 2)
+
     assert len(input_argument) == len(kernel_size), (
         "kernel_size dimension != padding dimension.",
         f"Found length(kernel_size)={len(kernel_size)} length(padding)={len(input_argument)}",
@@ -29,7 +32,6 @@ def _(input_argument, kernel_size):
     padding = [[]] * len(kernel_size)
 
     for i, item in enumerate(input_argument):
-
         if isinstance(item, int):
             padding[i] = (item, item)
 
@@ -53,6 +55,7 @@ def _(input_argument, kernel_size):
 @resolve_padding_argument.register(str)
 def _(input_argument, kernel_size):
     same = lambda wi: ((wi - 1) // 2, wi // 2)
+
     if input_argument in ["same", "SAME", "Same"]:
         return tuple(same(wi) for wi in kernel_size)
 
@@ -73,7 +76,6 @@ def _(input_argument, kernel_size):
 def resolve_dict_argument(
     input_dict: dict[str, int], dim: int, default: Any
 ) -> dict[Any:Any]:
-
     """return a tuple that map values of dict into tuple
 
     Args:
@@ -119,40 +121,43 @@ def _(input_argument, kernel_size):
     return offset
 
 
+@dispatch(argnum=0)
+def resolve_index_step(index, shape):
+    raise NotImplementedError(f"index type={type(index)} is not implemented")
+
+
+@resolve_index_step.register(int)
+def _(index, shape):
+    index += shape if index < 0 else 0
+    return index
+
+
+@resolve_index_step.register(slice)
+def _(index, shape):
+    start, end, step = index.start, index.stop, index.step
+
+    start = start or 0
+    start += shape if start < 0 else 0
+
+    end = end or shape
+    end += shape if end < 0 else 0
+
+    step = step or 1
+
+    return (start, end, step)
+
+
+@resolve_index_step.register(list)
+@resolve_index_step.register(tuple)
+def _(index, shape):
+    assert all(
+        isinstance(i, int) for i in jax.tree_util.tree_leaves(index)
+    ), "All items in tuple must be int"
+    return index
+
+
 def resolve_index(index, shape):
     """Resolve index to a tuple of int"""
-
-    @dispatch(argnum=0)
-    def resolve_index_step(index, shape):
-        raise NotImplementedError(f"index type={type(index)} is not implemented")
-
-    @resolve_index_step.register(int)
-    def _(index, shape):
-        index += shape if index < 0 else 0
-        return index
-
-    @resolve_index_step.register(slice)
-    def _(index, shape):
-        start, end, step = index.start, index.stop, index.step
-
-        start = start or 0
-        start += shape if start < 0 else 0
-
-        end = end or shape
-        end += shape if end < 0 else 0
-
-        step = step or 1
-
-        return (start, end, step)
-
-    @resolve_index_step.register(list)
-    @resolve_index_step.register(tuple)
-    def _(index, shape):
-        assert all(
-            isinstance(i, int) for i in jax.tree_util.tree_leaves(index)
-        ), "All items in tuple must be int"
-        return index
-
     index = [index] if not isinstance(index, tuple) else index
     resolved_index = [[]] * len(index)
 
@@ -171,3 +176,61 @@ def normalize_slices(
         slices = [resolve_index(index, in_dim) for index in slices]
         container[func] = slices
     return container
+
+
+def resolve_kernel_size(arg, in_dim):
+
+    kw = "kernel_size"
+
+    if isinstance(arg, tuple):
+        assert all(isinstance(wi, int) for wi in arg), (
+            f"{kw}  input must be a tuple of int.\n"
+            f"Found {tuple(type(wi) for wi in arg  )}"
+        )
+
+        assert len(arg) == len(in_dim), (
+            f"{kw}  dimension must be equal to array dimension.",
+            f"Found len({arg }) != len{(in_dim)}",
+        )
+
+        assert all(ai <= si for (ai, si) in zip(arg, in_dim)), (
+            f"{kw} shape must be less than array shape.\n",
+            f"Found {kw}  = {arg } array shape = {in_dim} ",
+        )
+
+        return tuple(si if wi == -1 else wi for si, wi in ZIP(in_dim, arg))
+
+    elif isinstance(arg, int):
+        return (arg,) * len(in_dim)
+
+    else:
+        raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")
+
+
+def resolve_strides(arg, in_dim):
+
+    kw = "strides"
+
+    if isinstance(arg, tuple):
+        assert all(isinstance(wi, int) for wi in arg), (
+            f"{kw}  input must be a tuple of int.\n"
+            f"Found {tuple(type(wi) for wi in arg  )}"
+        )
+
+        assert len(arg) == len(in_dim), (
+            f"{kw}  dimension must be equal to array dimension.",
+            f"Found len({arg }) != len{(in_dim)}",
+        )
+
+        assert all(ai <= si for (ai, si) in zip(arg, in_dim)), (
+            f"{kw} shape must be less than array shape.\n",
+            f"Found {kw}  = {arg } array shape = {in_dim} ",
+        )
+
+        return arg
+
+    elif isinstance(arg, int):
+        return (arg,) * len(in_dim)
+
+    else:
+        raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")

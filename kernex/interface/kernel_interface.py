@@ -8,8 +8,8 @@ from __future__ import annotations
 import functools
 from typing import Callable
 
+import pytreeclass as pytc
 from jax import numpy as jnp
-from pytreeclass import static_field, treeclass
 
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
@@ -23,17 +23,17 @@ from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class kernelInterface:
 
-    kernel_size: tuple[int, ...] | int = static_field()
-    strides: tuple[int, ...] | int = static_field(default=1)
-    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = static_field(default=0, repr=False)  # fmt: skip
-    relative: bool = static_field(default=False)
-    inplace: bool = static_field(default=False)
-    use_offset: bool = static_field(default=False)
-    named_axis: dict[int, str] | None = static_field(default=None)
-    container: dict[Callable, slice | int] = static_field(default_factory=dict)
+    kernel_size: tuple[int, ...] | int = pytc.static_field()
+    strides: tuple[int, ...] | int = pytc.static_field(default=1)
+    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = pytc.static_field(default=0, repr=False)  # fmt: skip
+    relative: bool = pytc.static_field(default=False)
+    inplace: bool = pytc.static_field(default=False)
+    use_offset: bool = pytc.static_field(default=False)
+    named_axis: dict[int, str] | None = pytc.static_field(default=None)
+    container: dict[Callable, slice | int] = pytc.static_field(default_factory=dict)
 
     def __post_init__(self):
         """resolve the border values and the kernel operation"""
@@ -124,7 +124,7 @@ class kernelInterface:
             )
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class sscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -141,7 +141,7 @@ class sscan(kernelInterface):
         )
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class smap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -158,7 +158,7 @@ class smap(kernelInterface):
         )
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class kscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
@@ -175,7 +175,7 @@ class kscan(kernelInterface):
         )
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class kmap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None

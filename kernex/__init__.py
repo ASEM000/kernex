@@ -8,4 +8,4 @@ __all__ = ("src", "kmap", "kscan", "smap", "sscan", "kernelOperation",
            "baseKernelMap", "kernelMap", "offsetKernelMap", "baseKernelScan",
            "kernelScan", "offsetKernelScan")
 
-__version__ = "0.0.4"
+__version__ = "0.0.4post"

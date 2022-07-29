@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from typing import Any, Callable
 
 import jax
@@ -178,6 +179,7 @@ def normalize_slices(
     return container
 
 
+@functools.lru_cache(maxsize=None)
 def resolve_kernel_size(arg, in_dim):
 
     kw = "kernel_size"
@@ -201,12 +203,13 @@ def resolve_kernel_size(arg, in_dim):
         return tuple(si if wi == -1 else wi for si, wi in ZIP(in_dim, arg))
 
     elif isinstance(arg, int):
-        return (arg,) * len(in_dim)
+        return (in_dim if arg == -1 else arg) * len(in_dim)
 
     else:
         raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")
 
 
+@functools.lru_cache(maxsize=None)
 def resolve_strides(arg, in_dim):
 
     kw = "strides"

@@ -3,23 +3,23 @@ from __future__ import annotations
 from itertools import product
 from typing import Any, Callable
 
+import pytreeclass as pytc
 from jax import numpy as jnp
-from pytreeclass import static_field, treeclass
 from pytreeclass.src.decorator_util import cached_property
 
 from kernex.src.utils import ZIP, general_arange, general_product, key_search
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class kernelOperation:
     """base class for all kernel operations"""
 
-    func_dict: dict[Callable[[Any], jnp.ndarray] : tuple[int, ...]] = static_field()  # fmt: skip
-    shape: tuple[int, ...] = static_field()
-    kernel_size: tuple[int, ...] = static_field()
-    strides: tuple[int, ...] = static_field()
-    border: tuple[tuple[int, int], ...] = static_field()
-    relative: bool = static_field()
+    func_dict: dict[Callable[[Any], jnp.ndarray] : tuple[int, ...]] = pytc.static_field()  # fmt: skip
+    shape: tuple[int, ...] = pytc.static_field()
+    kernel_size: tuple[int, ...] = pytc.static_field()
+    strides: tuple[int, ...] = pytc.static_field()
+    border: tuple[tuple[int, int], ...] = pytc.static_field()
+    relative: bool = pytc.static_field()
 
     @cached_property
     def pad_width(self):

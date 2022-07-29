@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from typing import Callable
 
+import pytreeclass as pytc
 from jax import lax
 from jax import numpy as jnp
 from jax import vmap
-from pytreeclass import treeclass
 from pytreeclass.src.decorator_util import cached_property
 
 from kernex.src.base import kernelOperation
 from kernex.src.utils import ZIP, ix_, offset_to_padding, roll_view
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class baseKernelMap(kernelOperation):
     def __post_init__(self):
         self.__call__ = (
@@ -54,7 +54,7 @@ class baseKernelMap(kernelOperation):
         return result.reshape(*self.output_shape, *func_shape)
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class kernelMap(baseKernelMap):
     def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
 
@@ -64,7 +64,7 @@ class kernelMap(baseKernelMap):
         return self.__call__(array, *args, **kwargs)
 
 
-@treeclass(op=False)
+@pytc.treeclass(op=False)
 class offsetKernelMap(kernelMap):
     def __init__(self, func_dict, shape, kernel_size, strides, offset, relative):
 

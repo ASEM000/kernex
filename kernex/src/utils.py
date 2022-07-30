@@ -22,7 +22,7 @@ def ZIP(*args):
     return zip(*args)
 
 
-def offset_to_padding(input_argument, kernel_size):
+def _offset_to_padding(input_argument, kernel_size):
     """convert offset argument to negative border values"""
 
     padding = [[]] * len(kernel_size)
@@ -147,7 +147,7 @@ def general_product(*args):
     return nvmap(len(args))(*args)
 
 
-def index_from_view(
+def _index_from_view(
     view: tuple[jnp.ndarray, ...], kernel_size: tuple[int, ...]
 ) -> tuple[int, ...]:
     """Get the index of array from the view
@@ -166,7 +166,7 @@ def index_from_view(
     )
 
 
-def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool:
+def _compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool:
     """check if index as array x is in the range of index as array y for all dimensions
 
     Args:
@@ -177,7 +177,7 @@ def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool:
         bool: if x in range(y) or x == y
     """
 
-    def compare_key_item(xi: jnp.ndarray, yi: jnp.ndarray) -> bool:
+    def _compare_key_item(xi: jnp.ndarray, yi: jnp.ndarray) -> bool:
         """check if index as array xi is in the range of index as array yi for single dimension
 
         Args:
@@ -199,10 +199,10 @@ def compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool:
         elif yi.size == 1:
             return jnp.where(yi == jnp.inf, True, xi == yi)
 
-    return jnp.all(jnp.array([compare_key_item(xi, yi) for (xi, yi) in zip(x, y)]))
+    return jnp.all(jnp.array([_compare_key_item(xi, yi) for (xi, yi) in zip(x, y)]))
 
 
-def key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray]) -> int:
+def _key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray]) -> int:
     """returns the index of the key in the keys array if key is within the key range or equal to it.
 
     Args:
@@ -227,7 +227,7 @@ def key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray]) -> int:
 
         comparisons = tuple(
             [
-                compare_key(
+                _compare_key(
                     [jnp.array([ki]) for ki in key],  # tuples of array
                     [jnp.array(ki) for ki in rhs_key],
                 )

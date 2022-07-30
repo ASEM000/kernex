@@ -9,7 +9,7 @@ from jax import vmap
 from pytreeclass.src.decorator_util import cached_property
 
 from kernex.src.base import kernelOperation
-from kernex.src.utils import ZIP, ix_, offset_to_padding, roll_view
+from kernex.src.utils import ZIP, _offset_to_padding, ix_, roll_view
 
 
 @pytc.treeclass(op=False)
@@ -75,7 +75,7 @@ class offsetKernelMap(kernelMap):
             shape,
             kernel_size,
             strides,
-            offset_to_padding(offset, kernel_size),
+            _offset_to_padding(offset, kernel_size),
             relative,
         )
 

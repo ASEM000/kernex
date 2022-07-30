@@ -13,7 +13,7 @@ from kernex.src.utils import ZIP
 
 
 @dispatch(argnum=0)
-def resolve_padding_argument(
+def _resolve_padding_argument(
     input_argument: tuple[int | tuple[int, int] | str, ...] | int | str,
     kernel_size: tuple[int, ...],
 ):
@@ -21,7 +21,7 @@ def resolve_padding_argument(
     ...
 
 
-@resolve_padding_argument.register(tuple)
+@_resolve_padding_argument.register(tuple)
 def _(input_argument, kernel_size):
     same = lambda wi: ((wi - 1) // 2, wi // 2)
 
@@ -53,7 +53,7 @@ def _(input_argument, kernel_size):
     return tuple(padding)
 
 
-@resolve_padding_argument.register(str)
+@_resolve_padding_argument.register(str)
 def _(input_argument, kernel_size):
     same = lambda wi: ((wi - 1) // 2, wi // 2)
 
@@ -69,12 +69,12 @@ def _(input_argument, kernel_size):
         )
 
 
-@resolve_padding_argument.register(int)
+@_resolve_padding_argument.register(int)
 def _(input_argument, kernel_size):
     return ((input_argument, input_argument),) * len(kernel_size)
 
 
-def resolve_dict_argument(
+def _resolve_dict_argument(
     input_dict: dict[str, int], dim: int, default: Any
 ) -> dict[Any:Any]:
     """return a tuple that map values of dict into tuple
@@ -85,10 +85,10 @@ def resolve_dict_argument(
         default (Any): default value of the output tuple
 
     Example:
-        >>> resolve_dict_argument({0:1,1:2,2:3},dim=3,default=0) -> (1,2,3)
-        >>> resolve_dict_argument({1:2,0:1,2:3},dim=3,default=0) -> (1,2,3)
-        >>> resolve_dict_argument({0:1},dim=3,default=0) -> (1,0,0)
-        >>> resolve_dict_argument({0:(1,0)},dim=3,default=0) -> ((1,0),(0,0),(0,0)) # tuple is inferred
+        >>> _resolve_dict_argument({0:1,1:2,2:3},dim=3,default=0) -> (1,2,3)
+        >>> _resolve_dict_argument({1:2,0:1,2:3},dim=3,default=0) -> (1,2,3)
+        >>> _resolve_dict_argument({0:1},dim=3,default=0) -> (1,0,0)
+        >>> _resolve_dict_argument({0:(1,0)},dim=3,default=0) -> ((1,0),(0,0),(0,0)) # tuple is inferred
     """
     # assign mutable list
     temp = [default] * dim
@@ -100,19 +100,19 @@ def resolve_dict_argument(
 
 
 @dispatch(argnum=0)
-def resolve_offset_argument(input_argument, kernel_size):
+def _resolve_offset_argument(input_argument, kernel_size):
     raise NotImplementedError(
         "input_argument type={} is not implemented".format(type(input_argument))
     )
 
 
-@resolve_offset_argument.register(int)
+@_resolve_offset_argument.register(int)
 def _(input_argument, kernel_size):
     return [(input_argument, input_argument)] * len(kernel_size)
 
 
-@resolve_offset_argument.register(list)
-@resolve_offset_argument.register(tuple)
+@_resolve_offset_argument.register(list)
+@_resolve_offset_argument.register(tuple)
 def _(input_argument, kernel_size):
     offset = [[]] * len(kernel_size)
 
@@ -123,17 +123,17 @@ def _(input_argument, kernel_size):
 
 
 @dispatch(argnum=0)
-def resolve_index_step(index, shape):
+def __resolve_index_step(index, shape):
     raise NotImplementedError(f"index type={type(index)} is not implemented")
 
 
-@resolve_index_step.register(int)
+@__resolve_index_step.register(int)
 def _(index, shape):
     index += shape if index < 0 else 0
     return index
 
 
-@resolve_index_step.register(slice)
+@__resolve_index_step.register(slice)
 def _(index, shape):
     start, end, step = index.start, index.stop, index.step
 
@@ -148,8 +148,8 @@ def _(index, shape):
     return (start, end, step)
 
 
-@resolve_index_step.register(list)
-@resolve_index_step.register(tuple)
+@__resolve_index_step.register(list)
+@__resolve_index_step.register(tuple)
 def _(index, shape):
     assert all(
         isinstance(i, int) for i in jax.tree_util.tree_leaves(index)
@@ -157,30 +157,30 @@ def _(index, shape):
     return index
 
 
-def resolve_index(index, shape):
+def _resolve_index(index, shape):
     """Resolve index to a tuple of int"""
     index = [index] if not isinstance(index, tuple) else index
     resolved_index = [[]] * len(index)
 
     for i, (item, in_dim) in enumerate(zip(index, shape)):
-        resolved_index[i] = resolve_index_step(item, in_dim)
+        resolved_index[i] = __resolve_index_step(item, in_dim)
 
     return resolved_index
 
 
-def normalize_slices(
+def _normalize_slices(
     container: dict[Callable[Any], jnp.ndarray], in_dim: tuple[int, ...]
 ) -> dict[Callable[Any], jnp.ndarray]:
     """Convert slice with partial range to tuple with determined range"""
 
     for func, slices in container.items():
-        slices = [resolve_index(index, in_dim) for index in slices]
+        slices = [_resolve_index(index, in_dim) for index in slices]
         container[func] = slices
     return container
 
 
 @functools.lru_cache(maxsize=None)
-def resolve_kernel_size(arg, in_dim):
+def _resolve_kernel_size(arg, in_dim):
 
     kw = "kernel_size"
 
@@ -210,7 +210,7 @@ def resolve_kernel_size(arg, in_dim):
 
 
 @functools.lru_cache(maxsize=None)
-def resolve_strides(arg, in_dim):
+def _resolve_strides(arg, in_dim):
 
     kw = "strides"
 

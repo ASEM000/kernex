@@ -13,11 +13,11 @@ from jax import numpy as jnp
 
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
-    normalize_slices,
-    resolve_kernel_size,
-    resolve_offset_argument,
-    resolve_padding_argument,
-    resolve_strides,
+    _normalize_slices,
+    _resolve_kernel_size,
+    _resolve_offset_argument,
+    _resolve_padding_argument,
+    _resolve_strides,
 )
 from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
@@ -39,11 +39,11 @@ class kernelInterface:
         """resolve the border values and the kernel operation"""
 
         if self.use_offset:
-            self.border = resolve_offset_argument(self.border, self.kernel_size)
+            self.border = _resolve_offset_argument(self.border, self.kernel_size)
             self.kernel_op = offsetKernelScan if self.inplace else offsetKernelMap
 
         else:
-            self.border = resolve_padding_argument(self.border, self.kernel_size)
+            self.border = _resolve_padding_argument(self.border, self.kernel_size)
             self.kernel_op = kernelScan if self.inplace else kernelMap
 
     def __setitem__(self, index, func):
@@ -56,12 +56,12 @@ class kernelInterface:
         self.container[func] = [*self.container.get(func, []), index]
 
     def _wrap_mesh(self, array, *args, **kwargs):
-        # TODO : run once resolve_kernel_size/resolve_strides
+        # TODO : run once _resolve_kernel_size/_resolve_strides
 
         self.shape = array.shape
-        self.kernel_size = resolve_kernel_size(self.kernel_size, self.shape)
-        self.strides = resolve_strides(self.strides, self.shape)
-        self.container = normalize_slices(self.container, self.shape)
+        self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
+        self.strides = _resolve_strides(self.strides, self.shape)
+        self.container = _normalize_slices(self.container, self.shape)
         self.resolved_container = {}
 
         for (func, index) in self.container.items():
@@ -86,10 +86,10 @@ class kernelInterface:
     def _wrap_decorator(self, func):
         def call(array, *args, **kwargs):
 
-            # TODO : run once resolve_kernel_size/resolve_strides
+            # TODO : run once _resolve_kernel_size/_resolve_strides
             self.shape = array.shape
-            self.kernel_size = resolve_kernel_size(self.kernel_size, self.shape)
-            self.strides = resolve_strides(self.strides, self.shape)
+            self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
+            self.strides = _resolve_strides(self.strides, self.shape)
 
             self.resolved_container = {
                 named_axis_wrapper(self.kernel_size, self.named_axis)(func)

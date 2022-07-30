@@ -212,3 +212,95 @@ def test_mesh():
             ]
         ),
     )
+
+
+def test_lax_scan_with_kscan():
+    A = jnp.ones([10])
+    F = kex.kscan(kernel_size=(1,), relative=True, padding="same")
+    F[1:-1] = lambda x: x[0] + 1
+    F[0] = F[-1] = lambda x: x[0]
+
+    np.testing.assert_allclose(F(A), np.array([1, 2, 2, 2, 2, 2, 2, 2, 2, 1]))
+
+    def scan_fn(carry, xs):
+        return F(carry), None
+
+    u, _ = jax.lax.scan(scan_fn, A, jnp.arange(9))
+    np.testing.assert_allclose(u, np.array([1, 10, 10, 10, 10, 10, 10, 10, 10, 1]))
+
+    A = jnp.ones([10])
+    F = kex.kscan(kernel_size=(3,), relative=True, padding="same")
+    F[1:-1] = lambda x: x[0] + x[-1] + x[1]
+    F[0] = F[-1] = lambda x: x[0]
+
+    np.testing.assert_allclose(
+        F(A), jnp.array([1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0, 1.0])
+    )
+
+    def scan_func(carry, xs):
+        return F(carry), None
+
+    u, _ = jax.lax.scan(scan_func, A, jnp.arange(2))
+    np.testing.assert_allclose(
+        u, jnp.array([1.0, 9.0, 21.0, 37.0, 57.0, 81.0, 109.0, 141.0, 159.0, 1.0])
+    )
+
+
+def test_lax_scan_with_kmap():
+    A = jnp.ones([10])
+    F = kex.kmap(kernel_size=(1,), relative=True, padding="same")
+    F[1:-1] = lambda x: x[0] + 1
+    F[0] = F[-1] = lambda x: x[0]
+
+    np.testing.assert_allclose(F(A), np.array([1, 2, 2, 2, 2, 2, 2, 2, 2, 1]))
+
+    def scan_fn(carry, xs):
+        return F(carry), None
+
+    u, _ = jax.lax.scan(scan_fn, A, jnp.arange(9))
+    np.testing.assert_allclose(u, np.array([1, 10, 10, 10, 10, 10, 10, 10, 10, 1]))
+
+    A = jnp.ones([10])
+    F = kex.kmap(kernel_size=(3,), relative=True, padding="same")
+    F[1:-1] = lambda x: x[0] + x[-1] + x[1]
+    F[0] = F[-1] = lambda x: x[0]
+
+    np.testing.assert_allclose(
+        F(A), jnp.array([1.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 1.0])
+    )
+
+    def scan_func(carry, xs):
+        return F(carry), None
+
+    u, _ = jax.lax.scan(scan_func, A, jnp.arange(2))
+    np.testing.assert_allclose(u, jnp.array([1.0, 7.0, 9, 9, 9, 9, 9, 9, 7, 1.0]))
+
+
+def test_conv2d():
+    C, H = 3, 16
+
+    @jax.jit
+    def jax_conv2d(x, w):
+        return jax.lax.conv_general_dilated(
+            lhs=x,
+            rhs=w,
+            window_strides=(1, 1),
+            padding="SAME",
+            dimension_numbers=("NCHW", "OIHW", "NCHW"),
+        )[0]
+
+    @jax.jit
+    @kex.kmap(kernel_size=(C, 3, 3), padding=("valid", "same", "same"), relative=False)
+    def kex_conv2d(x, w):
+        return jnp.sum(x * w)
+
+    x = jax.random.normal(jax.random.PRNGKey(0), (C, H, H))
+    xx = x[None]
+    w = jax.random.normal(jax.random.PRNGKey(0), (C, 3, 3))
+    ww = w[None]
+    np.testing.assert_allclose(kex_conv2d(x, w), jax_conv2d(xx, ww), atol=1e-4)
+
+    true_grad = jax.grad(lambda ww: jnp.sum(jax_conv2d(xx, ww)))(ww)
+    pred_grad = jax.grad(lambda w: jnp.sum(kex_conv2d(x, w)))(w)
+
+    np.testing.assert_allclose(true_grad[0], pred_grad, atol=1e-3)

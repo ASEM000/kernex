@@ -56,7 +56,6 @@ class kernelInterface:
         self.container[func] = [*self.container.get(func, []), index]
 
     def _wrap_mesh(self, array, *args, **kwargs):
-        # TODO : run once _resolve_kernel_size/_resolve_strides
 
         self.shape = array.shape
         self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
@@ -86,7 +85,6 @@ class kernelInterface:
     def _wrap_decorator(self, func):
         def call(array, *args, **kwargs):
 
-            # TODO : run once _resolve_kernel_size/_resolve_strides
             self.shape = array.shape
             self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
             self.strides = _resolve_strides(self.strides, self.shape)

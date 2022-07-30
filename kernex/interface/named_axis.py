@@ -24,30 +24,28 @@ class sortedDict(dict):
         super().__setitem__(key, val)
 
 
-# ---------------------- generate_named_axis ------------------------ #
-
-
 def generate_named_axis(
     kernel_size: tuple[int, ...], named_axis: dict[int, str], relative: bool = True
 ) -> dict[str, tuple[int, ...]]:
-    """
-    --- Explanation
-        return a dict that maps named axis to their integer value indices
+    """Return a dict that maps named axis to their integer value indices
 
-    --- Output
-        [1] fully named axes (len(keys)==len(kernel_size ))
+    Args:
+        kernel_size (tuple[int, ...]): kernel_size
+        named_axis (dict[int, str]): axis argnum and its corresponding name
+        relative (bool, optional): relative indexing boolean. Defaults to True.
+
+    Raises:
+        ValueError: Not int/str in named_axis
+
+    Returns:
+        dict[str, tuple[int, ...]]:
+            [1] fully named axes (len(keys)==len(kernel_size ))
             return sortedDict object , where keys order is insignificant ( A['a','b']==A['b','a'])
 
-        [2] partially named axes (len(keys)<len(kernel_size s))
+            [2] partially named axes (len(keys)<len(kernel_size s))
             return dictionary object where key order matters.
 
-    --- Args
-        kernel_size  : kernel_size  dim tuple
-        named_axis : dim:character map
-        relative : defines if the kernel_size  indexing is relative or not
-
-    --- Examples
-
+    Examples:
         ### fully named axes case (inordered keys) :
         >>> generate_named_axis(named_axis={0:'b',1:'a'} , kernel_size =(2,3),relative=True)
             { ('b', 'a')    : (0, 0),
@@ -76,9 +74,7 @@ def generate_named_axis(
             ('b+2', 0)  : (2, 0),
             ('b+2', 1)  : (2, 1),
             ('b+2', 2)  : (2, 2)}
-
     """
-
     # helper function to return range of sliding kernel_size  for a given dimension
     def range_func(wi):
         if relative:
@@ -142,9 +138,6 @@ def generate_named_axis(
 
     # print(return_dict,type(return_dict))
     return return_dict
-
-
-# ---------------------- named_axis_wrapper ------------------------ #
 
 
 def named_axis_wrapper(kernel_size, named_axis):

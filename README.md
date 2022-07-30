@@ -33,13 +33,16 @@ Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general
 <div align="center">
 <table>
 <tr>
-<td width="50%"> kmap </td> <td> kscan </td>
+<td width="50%" align="center" > kmap </td> <td align="center" > kscan </td>
 </tr>
 <tr>
 <td>
 
 ```python
-@kernex.kmap(kernel_size=(3,))
+import kernex as kex 
+import jax.numpy as jnp 
+
+@kex.kmap(kernel_size=(3,))
 def sum_all(x):
     return jnp.sum(x)
 
@@ -47,15 +50,14 @@ def sum_all(x):
 >>> print(sum_all(x))
 [ 6  9 12]
 ```
-
-`jax.vmap` is used to sum each window content.
-<img src="assets/kmap_sum.png" width=400px>
-
 </td>
 <td>
     
 ```python
-@kernex.kscan(kernel_size=(3,))
+import kernex as kex 
+import jax.numpy as jnp 
+
+@kex.kscan(kernel_size=(3,))
 def sum_all(x):
     return jnp.sum(x)
 
@@ -63,7 +65,18 @@ def sum_all(x):
 >>> print(sum_all(x))
 [ 6 13 22]
 
-````
+```
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%">
+`jax.vmap` is used to sum each window content.
+<img src="assets/kmap_sum.png" width=400px>
+</td>
+<td>
 `lax.scan` is used to update the array and the window sum is calculated sequentially.
 the first three rows represents the three sequential steps used to get the solution in the last row.
 
@@ -71,7 +84,6 @@ the first three rows represents the three sequential steps used to get the solut
 </td>
 </tr>
 </table>
-
 </div>
 
 

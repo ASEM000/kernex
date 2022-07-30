@@ -21,7 +21,7 @@
 ## 🛠️ Installation<a id="Installation"></a>
 
 ```python
-pip install pytreeclass kernex
+pip install kernex
 ```
 
 ## 📖 Description<a id="Description"></a>
@@ -33,13 +33,16 @@ Kernex extends `jax.vmap` and `jax.lax.scan` with `kmap` and `kscan` for general
 <div align="center">
 <table>
 <tr>
-<td> kmap </td> <td> kscan </td>
+<td width="50%" align="center" > kmap </td> <td align="center" > kscan </td>
 </tr>
 <tr>
 <td>
 
 ```python
-@kernex.kmap(kernel_size=(3,))
+import kernex as kex 
+import jax.numpy as jnp 
+
+@kex.kmap(kernel_size=(3,))
 def sum_all(x):
     return jnp.sum(x)
 
@@ -47,17 +50,14 @@ def sum_all(x):
 >>> print(sum_all(x))
 [ 6  9 12]
 ```
-
-`jax.vmap` is used to sum each window content.
-<img src="assets/kmap_sum.png" width=400px>
-
-<br><br><br><br><br><br><br><br><br><br>
-
 </td>
 <td>
     
 ```python
-@kernex.kscan(kernel_size=(3,))
+import kernex as kex 
+import jax.numpy as jnp 
+
+@kex.kscan(kernel_size=(3,))
 def sum_all(x):
     return jnp.sum(x)
 
@@ -65,28 +65,39 @@ def sum_all(x):
 >>> print(sum_all(x))
 [ 6 13 22]
 
-````
-`lax.scan` is used to update the array and the window sum is calculated sequentially.
-the first three rows represents the three sequential steps used to get the solution in the last row.
-
-<img src="assets/kscan_sum.png" width=400px>
+```
 </td>
 </tr>
 </table>
 
+<table>
+<tr>
+<td width="50%">
+`jax.vmap` is used to sum each window content.
+<img src="assets/kmap_sum.png" width=400px>
+</td>
+<td>
+`lax.scan` is used to update the array and the window sum is calculated sequentially.
+the first three rows represents the three sequential steps used to get the solution in the last row.
+
+<img align="center" src="assets/kscan_sum.png" width=400px>
+</td>
+</tr>
+</table>
 </div>
 
 
 ## 🕸️ Function mesh concept <a id="FunctionMesh">
 <details>
 
-Apply `f(x) = x^2  at index=0  and f(x) = x^3 at  index=(1,10)`
+The objective is to apply `f(x) = x^2  at index=0  and f(x) = x^3 at  index=(1,10)`
 
 To achieve the following operation with `jax.lax.switch` , we need a list of 10 functions correspoing to each cell of the example array.
-For this reason , kernex adopts a modified version of `jax.lax.switch` to reduce the number of branches required to be equal to the number of unique functions assigned.
+For this reason , kernex adopts a modified version of `jax.lax.switch` to reduce the number of branches required.
 
 ```python
-'''
+# function applies x^2 at boundaries, and applies x^3 to to the interior
+
         ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
   f =   │ x^2 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │
         └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
@@ -98,6 +109,7 @@ For this reason , kernex adopts a modified version of `jax.lax.switch` to reduce
         │  1  │  8  │  27 │  64 │ 125 │ 216 │ 343 │ 512 │ 729 │1000 │
         └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
 
+# Gradient of this function
         ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
 df/dx = │ 2x  │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │
         └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
@@ -106,12 +118,9 @@ df/dx = │ 2x  │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 
         ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
  df/dx( │  1  │  2  │  3  │  4  │  5  │  6  │  7  │  8  │  9  │ 10  │ ) =
         └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-
         ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
         │  2  │  12 │ 27  │  48 │ 75  │ 108 │ 147 │ 192 │ 243 │ 300 │
         └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-
-'''
 ````
 
 <div align ="center">
@@ -168,7 +177,7 @@ print(jax.grad(lambda x: jnp.sum(F(x)))(array))
 </table>
 
 Additionally , we can combine the function mesh concept with stencil computation for scientific computing.
-See kscan section in **More examples** section
+See Linear convection in **More examples** section
 
 </div>
 
@@ -176,42 +185,34 @@ See kscan section in **More examples** section
 
 ## 🔢 More examples<a id="MoreExamples"></a>
 
+
 <details>
-    
+<summary>1️⃣ Convolution operation</summary>
+
 ```python
 import jax
 import jax.numpy as jnp
 import kernex as kex
-from pytreeclass import treeclass,tree_viz
-import numpy as np
-import matplotlib.pyplot as plt
 
-````
-
-### `kmap`
-
-<details>
-<summary>Convolution operation</summary>
-
-```python
-# JAX channel first conv2d operation
 @jax.jit
 @kex.kmap(
     kernel_size= (3,3,3),
     padding = ('valid','same','same'))
 def kernex_conv2d(x,w):
+    # JAX channel first conv2d with 3x3x3 kernel_size 
     return jnp.sum(x*w)
 ````
-
 </details>
 
 <details>
-<summary>Laplacian operation</summary>
+<summary>2️⃣ Laplacian operation</summary>
 
 ```python
-
 # see also
 # https://numba.pydata.org/numba-doc/latest/user/stencil.html#basic-usage
+import jax
+import jax.numpy as jnp
+import kernex as kex
 
 @kex.kmap(
     kernel_size=(3,3),
@@ -238,9 +239,12 @@ DeviceArray(
 
 </details>
 
-<details><summary>Get Patches of an array</summary>
+<details><summary>3️⃣ Get Patches of an array</summary>
 
 ```python
+import jax
+import jax.numpy as jnp
+import kernex as kex
 
 @kex.kmap(kernel_size=(3,3),relative=True)
 def identity(x):
@@ -276,10 +280,8 @@ mat = jnp.arange(1,26).reshape(5,5)
 
 </details>
 
-### `kscan` <a id=kscan></a>
-
 <details>
-<summary>Linear convection </summary>
+<summary>4️⃣ Linear convection </summary>
 
 $\Large {\partial u \over \partial t} + c {\partial u \over \partial x} = 0$ <br> <br>
 $\Large u_i^{n} = u_i^{n-1} - c \frac{\Delta t}{\Delta x}(u_i^{n-1}-u_{i-1}^{n-1})$
@@ -306,13 +308,17 @@ $\Large u_i^{n} = u_i^{n-1} - c \frac{\Delta t}{\Delta x}(u_i^{n-1}-u_{i-1}^{n-1
 
 
 ```python
+import jax
+import jax.numpy as jnp
+import kernex as kex
+import matplotlib.pyplot as plt
 
 # see https://nbviewer.org/github/barbagroup/CFDPython/blob/master/lessons/01_Step_1.ipynb
 
 tmax,xmax = 0.5,2.0
 nt,nx = 151,51
 dt,dx = tmax/(nt-1) , xmax/(nx-1)
-u = np.ones([nt,nx])
+u = jnp.ones([nt,nx])
 c = 0.5
 
 # kscan moves sequentially in row-major order and updates in-place using lax.scan.
@@ -321,7 +327,8 @@ F = kernex.kscan(
         kernel_size = (3,3),
         padding = ((1,1),(1,1)),
         named_axis={0:'n',1:'i'},  # n for time axis , i for spatial axis (optional naming)
-        relative=True)
+        relative=True
+        )
 
 
 # boundary condtion as a function
@@ -336,8 +343,7 @@ def ic2(u):
     return 2
 
 def linear_convection(u):
-    return ( u['i','n-1'] -
-            (c*dt/dx) * (u['i','n-1'] - u['i-1','n-1']) )
+    return ( u['i','n-1'] - (c*dt/dx) * (u['i','n-1'] - u['i-1','n-1']) )
 
 
 F[:,0]  = F[:,-1] = bc # assign 1 for left and right boundary for all t
@@ -351,32 +357,33 @@ F[0:1, int((nx-1)/4)+1 : int((nx-1)/2)] = ic2
 # and start from t>0  [1:]
 F[1:,1:-1] = linear_convection
 
-
 kx_solution = F(jnp.array(u))
 
 plt.figure(figsize=(20,7))
 for line in kx_solution[::20]:
     plt.plot(jnp.linspace(0,xmax,nx),line)
-
 ```
 
 ![image](assets/linear_convection.svg)
 
 </details>
 
-### `kmap` + `pytreeclass` = Pytorch-like Layers
-
 <details>
-
-<summary>MaxPool2D layer</summary>
+<summary >5️⃣ MaxPool2D layer</summary>
 
 ```python
-@treeclass
+# pip install pytreeclass
+import jax
+import jax.numpy as jnp 
+import kernex as kex
+import pytreeclass as pytc  # dataclass-like decorator for JAX
+
+@pytc.treeclass
 class MaxPool2D:
 
-    kernel_size: tuple[int, ...] | int = static_field()
-    strides: tuple[int, ...] | int = static_field()
-    padding: tuple[int, ...] | int | str = static_field()
+    kernel_size: tuple[int, ...] | int = pytc.static_field() # Exclude from JAX computations
+    strides: tuple[int, ...] | int = pytc.static_field()
+    padding: tuple[int, ...] | int | str = pytc.static_field()
 
     def __init__(self, *, kernel_size=(2, 2), strides=2, padding="valid"):
 
@@ -401,7 +408,6 @@ class MaxPool2D:
 layer = MaxPool2D(kernel_size=(2,2),strides=(2,2),padding='same')
 array = jnp.arange(1,26).reshape(1,1,5,5) # batch,channel,row,col
 
-
 >>> print(array)
 [[[[ 1  2  3  4  5]
    [ 6  7  8  9 10]
@@ -418,13 +424,19 @@ array = jnp.arange(1,26).reshape(1,1,5,5) # batch,channel,row,col
 </details>
 
 <details>
-<summary>AverageBlur2D layer</summary>
+<summary>6️⃣ AverageBlur2D layer</summary>
 
 ```python
 import os
 from PIL import Image
+import matplotlib.pyplot as plt
 
-@treeclass
+import jax
+import jax.numpy as jnp 
+import kernex as kex
+import pytreeclass as pytc  # dataclass-like decorator for JAX
+
+@pytc.treeclass
 class AverageBlurLayer:
   '''channels first'''
 
@@ -471,21 +483,25 @@ plt.imshow(blurred_image)
 
 </details>
 
-<details><summary>Conv2D layer</summary>
+<details><summary>7️⃣ Conv2D layer</summary>
 
 ```python
+import jax
+import jax.numpy as jnp 
+import kernex as kex
+import pytreeclass as pytc  # dataclass-like decorator for JAX
 
-@treeclass
+@pytc.treeclass
 class Conv2D:
 
     weight: jnp.ndarray
     bias: jnp.ndarray
 
-    in_channels: int = static_field()
-    out_channels: int = static_field()
-    kernel_size: tuple[int, ...] | int = static_field()
-    strides: tuple[int, ...] | int = static_field()
-    padding: tuple[int, ...] | int | str = static_field()
+    in_channels: int = pytc.static_field()
+    out_channels: int = pytc.static_field()
+    kernel_size: tuple[int, ...] | int = pytc.static_field()
+    strides: tuple[int, ...] | int = pytc.static_field()
+    padding: tuple[int, ...] | int | str = pytc.static_field()
 
     def __init__(self,
         *,
@@ -531,8 +547,6 @@ class Conv2D:
 
    </details>
 
-</details>
-<!-- ### Combining everything together -->
 
 ## ⌛ Benchmarking<a id="Benchmarking"></a>
 

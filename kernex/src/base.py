@@ -14,7 +14,7 @@ from kernex.src.utils import ZIP, _key_search, general_arange, general_product
 class kernelOperation:
     """base class for all kernel operations"""
 
-    func_dict: dict[Callable[[Any], jnp.ndarray] : tuple[int, ...]] = pytc.static_field()  # fmt: skip
+    func_index_map: dict[Callable[[Any], jnp.ndarray] : tuple[int, ...]] = pytc.static_field(repr=False)  # fmt: skip
     shape: tuple[int, ...] = pytc.static_field()
     kernel_size: tuple[int, ...] = pytc.static_field()
     strides: tuple[int, ...] = pytc.static_field()
@@ -69,17 +69,17 @@ class kernelOperation:
             view (tuple[jnp.ndarray, ...]): patch indices for each dimension
 
         Returns:
-            int: function index in the `func_dict.values()`
+            int: function index in the `func_index_map.values()`
         """
         return _key_search(key=tuple(self.index_from_view(view)), keys=self.slices)
 
     @property
     def funcs(self) -> tuple[Callable[[Any], jnp.ndarray]]:
-        return tuple(self.func_dict.keys())
+        return tuple(self.func_index_map.keys())
 
     @property
     def slices(self):
-        return tuple(self.func_dict.values())
+        return tuple(self.func_index_map.values())
 
     def index_from_view(self, view: tuple[jnp.ndarray, ...]) -> tuple[int, ...]:
         """Get the index of array from the view

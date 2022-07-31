@@ -23,7 +23,7 @@ from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass(op=False, field_only=True)
 class kernelInterface:
 
     kernel_size: tuple[int, ...] | int = pytc.static_field()

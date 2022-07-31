@@ -65,7 +65,7 @@ def test_and_time_conv2d():
         print("=" * 50)
 
         print(
-            f"[kex] average : {mean(times)*1e6:.0f} us\t stddev : {stdev(times)*10e6:.3f}us"
+            f"[kex] average : {mean(times)*1e6:.0f} us\t stddev : {stdev(times)*1e6:.3f}us"
         )
 
         times = []
@@ -76,7 +76,7 @@ def test_and_time_conv2d():
             times += [t2 - t1]
 
         print(
-            f"[jax] average : {mean(times)*1e6:.0f} us\t stddev : {stdev(times)*10e6:.3f}us"
+            f"[jax] average : {mean(times)*1e6:.0f} us\t stddev : {stdev(times)*1e6:.3f}us"
         )
 
         print("=" * 50)

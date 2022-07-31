@@ -170,6 +170,9 @@ def test_linear_convection():
     )
     # kex_solution = F(jnp.array(u))
 
+    print(f"{F!r}")
+    print(f"{F!s}")
+
     # F = jax.jit(F.__call__)
     # F
     # plt.figure(figsize=(20,7))

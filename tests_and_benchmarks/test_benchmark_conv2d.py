@@ -17,7 +17,7 @@ def test_and_time_conv2d():
     print()
     print("backend name = ", jax.devices())
 
-    iters = 1000
+    iters = 50
 
     dims = list(
         sorted(itertools.product([4, 8, 16, 32, 64], [16, 32, 64, 128, 256, 512, 1024]))

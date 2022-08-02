@@ -12,7 +12,7 @@ from kernex.src.base import kernelOperation
 from kernex.src.utils import ZIP, _offset_to_padding, ix_, roll_view
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class baseKernelMap(kernelOperation):
     def __post_init__(self):
         self.__call__ = (

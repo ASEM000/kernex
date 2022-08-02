@@ -23,7 +23,7 @@ from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
 
 
-@pytc.treeclass(op=False, field_only=True)
+@pytc.treeclass
 class kernelInterface:
 
     kernel_size: tuple[int, ...] | int = pytc.static_field()
@@ -37,14 +37,11 @@ class kernelInterface:
 
     def __post_init__(self):
         """resolve the border values and the kernel operation"""
-
-        if self.use_offset:
-            self.border = _resolve_offset_argument(self.border, self.kernel_size)
-            self.kernel_op = offsetKernelScan if self.inplace else offsetKernelMap
-
-        else:
-            self.border = _resolve_padding_argument(self.border, self.kernel_size)
-            self.kernel_op = kernelScan if self.inplace else kernelMap
+        self.border = (
+            _resolve_offset_argument(self.border, self.kernel_size)
+            if self.use_offset
+            else _resolve_padding_argument(self.border, self.kernel_size)
+        )
 
     def __setitem__(self, index, func):
 
@@ -73,7 +70,13 @@ class kernelInterface:
             else:
                 self.resolved_container[func] = index
 
-        return self.kernel_op(
+        kernel_op = (
+            (offsetKernelScan if self.inplace else offsetKernelMap)
+            if self.use_offset
+            else (kernelScan if self.inplace else kernelMap)
+        )
+
+        return kernel_op(
             self.resolved_container,
             self.shape,
             self.kernel_size,
@@ -95,7 +98,13 @@ class kernelInterface:
                 else func: ()
             }
 
-            return self.kernel_op(
+            kernel_op = (
+                (offsetKernelScan if self.inplace else offsetKernelMap)
+                if self.use_offset
+                else (kernelScan if self.inplace else kernelMap)
+            )
+
+            return kernel_op(
                 self.resolved_container,
                 self.shape,
                 self.kernel_size,
@@ -122,7 +131,7 @@ class kernelInterface:
             )
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class sscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -139,7 +148,7 @@ class sscan(kernelInterface):
         )
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class smap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -156,7 +165,7 @@ class smap(kernelInterface):
         )
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class kscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
@@ -173,7 +182,7 @@ class kscan(kernelInterface):
         )
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class kmap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None

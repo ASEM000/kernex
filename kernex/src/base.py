@@ -10,7 +10,7 @@ from pytreeclass.src.decorator_util import cached_property
 from kernex.src.utils import ZIP, _key_search, general_arange, general_product
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class kernelOperation:
     """base class for all kernel operations"""
 

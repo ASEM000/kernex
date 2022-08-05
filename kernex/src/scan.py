@@ -62,7 +62,7 @@ class baseKernelScan(kernelOperation):
         )
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class kernelScan(baseKernelScan):
     def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
 
@@ -72,7 +72,7 @@ class kernelScan(baseKernelScan):
         return self.__call__(array, *args, **kwargs)
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class offsetKernelScan(kernelScan):
     def __init__(self, func_dict, shape, kernel_size, strides, offset, relative):
 

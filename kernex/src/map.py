@@ -54,7 +54,7 @@ class baseKernelMap(kernelOperation):
         return result.reshape(*self.output_shape, *func_shape)
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class kernelMap(baseKernelMap):
     def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
 
@@ -64,7 +64,7 @@ class kernelMap(baseKernelMap):
         return self.__call__(array, *args, **kwargs)
 
 
-@pytc.treeclass(op=False)
+@pytc.treeclass
 class offsetKernelMap(kernelMap):
     def __init__(self, func_dict, shape, kernel_size, strides, offset, relative):
 

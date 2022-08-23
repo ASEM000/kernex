@@ -53,22 +53,25 @@ class kernelInterface:
         self.container[func] = [*self.container.get(func, []), index]
 
     def _wrap_mesh(self, array, *args, **kwargs):
+        object.__setattr__(self, "shape", array.shape)  # fmt: skip
+        object.__setattr__(self, "kernel_size", _resolve_kernel_size(self.kernel_size, self.shape))  # fmt: skip
+        object.__setattr__(self, "strides", _resolve_strides(self.strides, self.shape))  # fmt: skip
+        object.__setattr__(self, "container", _normalize_slices(self.container, self.shape))  # fmt: skip
+        object.__setattr__(self, "resolved_container", {})
 
-        self.shape = array.shape
-        self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
-        self.strides = _resolve_strides(self.strides, self.shape)
-        self.container = _normalize_slices(self.container, self.shape)
-        self.resolved_container = {}
+        resolved_container = {}
 
         for (func, index) in self.container.items():
 
             if func is not None and self.named_axis is not None:
-                self.resolved_container[
+                resolved_container[
                     named_axis_wrapper(self.kernel_size, self.named_axis)(func)
                 ] = index
 
             else:
-                self.resolved_container[func] = index
+                resolved_container[func] = index
+
+        object.__setattr__(self, "resolved_container", resolved_container)
 
         kernel_op = (
             (offsetKernelScan if self.inplace else offsetKernelMap)
@@ -87,16 +90,19 @@ class kernelInterface:
 
     def _wrap_decorator(self, func):
         def call(array, *args, **kwargs):
+            object.__setattr__(self, "shape", array.shape)  # fmt: skip
+            object.__setattr__(self, "kernel_size", _resolve_kernel_size(self.kernel_size, self.shape))  # fmt: skip
+            object.__setattr__(self, "strides", _resolve_strides(self.strides, self.shape))  # fmt: skip
 
-            self.shape = array.shape
-            self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
-            self.strides = _resolve_strides(self.strides, self.shape)
-
-            self.resolved_container = {
-                named_axis_wrapper(self.kernel_size, self.named_axis)(func)
-                if self.named_axis is not None
-                else func: ()
-            }
+            object.__setattr__(
+                self,
+                "resolved_container",
+                {
+                    named_axis_wrapper(self.kernel_size, self.named_axis)(func)
+                    if self.named_axis is not None
+                    else func: ()
+                },
+            )
 
             kernel_op = (
                 (offsetKernelScan if self.inplace else offsetKernelMap)

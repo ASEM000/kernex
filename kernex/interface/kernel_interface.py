@@ -6,9 +6,9 @@ This script defines the decorators and class object
 from __future__ import annotations
 
 import functools
+from dataclasses import dataclass, field
 from typing import Callable
 
-import pytreeclass as pytc
 from jax import numpy as jnp
 
 from kernex.interface.named_axis import named_axis_wrapper
@@ -23,17 +23,17 @@ from kernex.src.map import kernelMap, offsetKernelMap
 from kernex.src.scan import kernelScan, offsetKernelScan
 
 
-@pytc.treeclass
+@dataclass
 class kernelInterface:
 
-    kernel_size: tuple[int, ...] | int = pytc.static_field()
-    strides: tuple[int, ...] | int = pytc.static_field(default=1)
-    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = pytc.static_field(default=0, repr=False)  # fmt: skip
-    relative: bool = pytc.static_field(default=False)
-    inplace: bool = pytc.static_field(default=False)
-    use_offset: bool = pytc.static_field(default=False)
-    named_axis: dict[int, str] | None = pytc.static_field(default=None)
-    container: dict[Callable, slice | int] = pytc.static_field(default_factory=dict)
+    kernel_size: tuple[int, ...] | int = field()
+    strides: tuple[int, ...] | int = field(default=1)
+    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = field(default=0, repr=False)  # fmt: skip
+    relative: bool = field(default=False)
+    inplace: bool = field(default=False)
+    use_offset: bool = field(default=False)
+    named_axis: dict[int, str] | None = field(default=None)
+    container: dict[Callable, slice | int] = field(default_factory=dict)
 
     def __post_init__(self):
         """resolve the border values and the kernel operation"""
@@ -53,25 +53,21 @@ class kernelInterface:
         self.container[func] = [*self.container.get(func, []), index]
 
     def _wrap_mesh(self, array, *args, **kwargs):
-        object.__setattr__(self, "shape", array.shape)  # fmt: skip
-        object.__setattr__(self, "kernel_size", _resolve_kernel_size(self.kernel_size, self.shape))  # fmt: skip
-        object.__setattr__(self, "strides", _resolve_strides(self.strides, self.shape))  # fmt: skip
-        object.__setattr__(self, "container", _normalize_slices(self.container, self.shape))  # fmt: skip
-        object.__setattr__(self, "resolved_container", {})
-
-        resolved_container = {}
+        self.shape = array.shape
+        self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
+        self.strides = _resolve_strides(self.strides, self.shape)
+        self.container = _normalize_slices(self.container, self.shape)
+        self.resolved_container = {}
 
         for (func, index) in self.container.items():
 
             if func is not None and self.named_axis is not None:
-                resolved_container[
+                self.resolved_container[
                     named_axis_wrapper(self.kernel_size, self.named_axis)(func)
                 ] = index
 
             else:
-                resolved_container[func] = index
-
-        object.__setattr__(self, "resolved_container", resolved_container)
+                self.resolved_container[func] = index
 
         kernel_op = (
             (offsetKernelScan if self.inplace else offsetKernelMap)
@@ -137,7 +133,7 @@ class kernelInterface:
             )
 
 
-@pytc.treeclass
+@dataclass
 class sscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -154,7 +150,7 @@ class sscan(kernelInterface):
         )
 
 
-@pytc.treeclass
+@dataclass
 class smap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -171,7 +167,7 @@ class smap(kernelInterface):
         )
 
 
-@pytc.treeclass
+@dataclass
 class kscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
@@ -188,7 +184,7 @@ class kscan(kernelInterface):
         )
 
 
-@pytc.treeclass
+@dataclass
 class kmap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None

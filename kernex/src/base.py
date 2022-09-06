@@ -5,9 +5,14 @@ from typing import Any, Callable
 
 import pytreeclass as pytc
 from jax import numpy as jnp
-from pytreeclass.src.decorator_util import cached_property
 
-from kernex.src.utils import ZIP, _key_search, general_arange, general_product
+from kernex.src.utils import (
+    ZIP,
+    _key_search,
+    cached_property,
+    general_arange,
+    general_product,
+)
 
 
 @pytc.treeclass

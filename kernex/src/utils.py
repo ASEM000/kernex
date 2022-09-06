@@ -11,6 +11,17 @@ from jax import numpy as jnp
 from jax import vmap
 
 
+class cached_property:
+    def __init__(self, func):
+        self.name = func.__name__
+        self.func = func
+
+    def __get__(self, instance, owner):
+        attr = self.func(instance)
+        object.__setattr__(instance, self.name, attr)
+        return attr
+
+
 def ZIP(*args):
     """assert all args have the same number of elements before zipping"""
     n = len(args[0])

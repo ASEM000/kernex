@@ -5,10 +5,9 @@ from typing import Callable
 import pytreeclass as pytc
 from jax import lax
 from jax import numpy as jnp
-from pytreeclass.src.decorator_util import cached_property
 
-from kernex.src.base import kernelOperation
-from kernex.src.utils import ZIP, _offset_to_padding, ix_, roll_view
+from kernex._src.base import kernelOperation
+from kernex._src.utils import ZIP, _offset_to_padding, cached_property, ix_, roll_view
 
 
 @pytc.treeclass

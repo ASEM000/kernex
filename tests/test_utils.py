@@ -3,7 +3,7 @@ from functools import reduce
 import jax.numpy as jnp
 from numpy.testing import assert_array_equal
 
-from kernex.src.utils import roll_view, cached_property
+from kernex._src.utils import cached_property, roll_view
 
 # helper function to construct nd arrays
 mat = lambda *args: jnp.arange(1, reduce(lambda x, y: x * y, args) + 1).reshape(*args)

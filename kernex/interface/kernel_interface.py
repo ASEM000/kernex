@@ -11,6 +11,8 @@ from typing import Callable
 
 from jax import numpy as jnp
 
+from kernex._src.map import kernelMap, offsetKernelMap
+from kernex._src.scan import kernelScan, offsetKernelScan
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
     _normalize_slices,
@@ -19,8 +21,6 @@ from kernex.interface.resolve_utils import (
     _resolve_padding_argument,
     _resolve_strides,
 )
-from kernex.src.map import kernelMap, offsetKernelMap
-from kernex.src.scan import kernelScan, offsetKernelScan
 
 
 @dataclass

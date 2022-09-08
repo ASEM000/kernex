@@ -6,15 +6,15 @@ import pytreeclass as pytc
 from jax import lax
 from jax import numpy as jnp
 from jax import vmap
-from pytreeclass.src.decorator_util import cached_property
 
-from kernex.src.base import kernelOperation
-from kernex.src.utils import ZIP, _offset_to_padding, ix_, roll_view
+from kernex._src.base import kernelOperation
+from kernex._src.utils import ZIP, _offset_to_padding, cached_property, ix_, roll_view
 
 
 @pytc.treeclass
 class baseKernelMap(kernelOperation):
     def __post_init__(self):
+
         self.__call__ = (
             self.__single_call__ if len(self.funcs) == 1 else self.__multi_call__
         )
@@ -57,7 +57,6 @@ class baseKernelMap(kernelOperation):
 @pytc.treeclass
 class kernelMap(baseKernelMap):
     def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
-
         super().__init__(func_dict, shape, kernel_size, strides, padding, relative)
 
     def __call__(self, array, *args, **kwargs):

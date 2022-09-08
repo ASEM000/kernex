@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-import functools
+import functools as ft
 
 import jax
 from jax import numpy as jnp
@@ -57,7 +57,7 @@ def _offset_to_padding(input_argument, kernel_size):
     return tuple(padding)
 
 
-@functools.partial(jax.profiler.annotate_function, name="roll_view")
+@ft.partial(jax.profiler.annotate_function, name="roll_view")
 def roll_view(array: jnp.ndarray) -> jnp.ndarray:
     """Roll view along all axes
 
@@ -89,7 +89,7 @@ def ix_(*args):
     return tuple(output)
 
 
-@functools.partial(jax.profiler.annotate_function, name="general_arange")
+@ft.partial(jax.profiler.annotate_function, name="general_arange")
 def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
     """Calculate the windows indices for a given dimension.
 
@@ -124,7 +124,7 @@ def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
     return (res) if si == 1 else (res)[::si]
 
 
-@functools.partial(jax.profiler.annotate_function, name="general_product")
+@ft.partial(jax.profiler.annotate_function, name="general_product")
 def general_product(*args):
     """Equivalent to tuple(zip(*itertools.product(*args)))` for arrays
 

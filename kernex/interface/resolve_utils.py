@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import functools
+import functools as ft
 from typing import Any, Callable
 
 import jax
 import jax.numpy as jnp
-from pytreeclass.src.decorator_util import dispatch
+from pytreeclass._src.dispatch import dispatch
 
-from kernex.src.utils import ZIP
+from kernex._src.utils import ZIP
 
 # ---------------------- resolve_arguments ------------------------ #
 
@@ -179,7 +179,7 @@ def _normalize_slices(
     return container
 
 
-@functools.lru_cache(maxsize=None)
+@ft.lru_cache(maxsize=None)
 def _resolve_kernel_size(arg, in_dim):
 
     kw = "kernel_size"
@@ -209,7 +209,7 @@ def _resolve_kernel_size(arg, in_dim):
         raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")
 
 
-@functools.lru_cache(maxsize=None)
+@ft.lru_cache(maxsize=None)
 def _resolve_strides(arg, in_dim):
 
     kw = "strides"

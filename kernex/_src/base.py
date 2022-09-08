@@ -4,9 +4,11 @@ from itertools import product
 from typing import Any, Callable
 
 import pytreeclass as pytc
+
+# from pytreeclass._src.tree_base import _treeBase
 from jax import numpy as jnp
 
-from kernex.src.utils import (
+from kernex._src.utils import (
     ZIP,
     _key_search,
     cached_property,

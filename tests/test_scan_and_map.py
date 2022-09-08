@@ -3,8 +3,8 @@ from functools import reduce
 import jax.numpy as jnp
 from numpy.testing import assert_array_equal
 
-from kernex.src.map import kernelMap, offsetKernelMap
-from kernex.src.scan import kernelScan, offsetKernelScan
+from kernex._src.map import kernelMap, offsetKernelMap
+from kernex._src.scan import kernelScan, offsetKernelScan
 
 
 def mat(*args):

@@ -15,6 +15,11 @@ import jax.numpy as jnp
 class sortedDict(dict):
     """a class that sort a key before setting or getting an item"""
 
+    # this dict is used to store the kernel values
+    # the key is a tuple of the axis names
+    # the value is the kernel values
+    # for example if the kernel is 3x3 and the axis names are ['x', 'y']
+    # the key will be ('x', 'y') and the value will be the kernel values
     def __getitem__(self, key: tuple[str, ...]):
         key = (key,) if isinstance(key, str) else tuple(sorted(key))
         return super().__getitem__(key)

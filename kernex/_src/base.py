@@ -35,6 +35,10 @@ class kernelOperation:
         Returns:
             padding value passed to `pad_width` in `jnp.pad`
         """
+        # this function is cached because it is called multiple times
+        # and it is expensive to calculate
+        # if the border is negative, the padding is 0
+        # if the border is positive, the padding is the border value
         return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in self.border)
 
     @cached_property
@@ -45,6 +49,10 @@ class kernelOperation:
         Returns:
             tuple[int, ...]: resulting shape of the kernel operation
         """
+        # this function is cached because it is called multiple times
+        # and it is expensive to calculate
+        # the output shape is the shape of the array after the kernel operation
+        # is applied to the input array
         return tuple(
             (xi + (li + ri) - ki) // si + 1
             for xi, ki, si, (li, ri) in ZIP(
@@ -55,13 +63,16 @@ class kernelOperation:
     @cached_property
     def views(self) -> tuple[jnp.ndarray, ...]:
         """Generate absolute sampling matrix"""
+        # this function is cached because it is called multiple times
+        # and it is expensive to calculate
+        # the view is the indices of the array that is used to calculate
+        # the output value
         dim_range = tuple(
             general_arange(di, ki, si, x0, xf)
             for (di, ki, si, (x0, xf)) in zip(
                 self.shape, self.kernel_size, self.strides, self.border
             )
         )
-
         matrix = general_product(*dim_range)
         return tuple(map(lambda xi, wi: xi.reshape(-1, wi), matrix, self.kernel_size))
 
@@ -86,6 +97,8 @@ class kernelOperation:
 
     @property
     def slices(self):
+        # this function returns a tuple of slices
+        # the slices are used to slice the array
         return tuple(self.func_index_map.values())
 
     def index_from_view(self, view: tuple[jnp.ndarray, ...]) -> tuple[int, ...]:
@@ -97,6 +110,7 @@ class kernelOperation:
         Returns:
             tuple[int, ...]: index as a tuple of int for each dimension
         """
+        # this function returns a tuple of int
         return tuple(
             view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) // 2]
             for i, wi in enumerate(self.kernel_size)

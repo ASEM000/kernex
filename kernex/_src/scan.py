@@ -13,12 +13,17 @@ from kernex._src.utils import ZIP, _offset_to_padding, cached_property, ix_, rol
 @pytc.treeclass
 class baseKernelScan(kernelOperation):
     def __post_init__(self):
+        # if there is only one function, use the single call method
+        # this is faster than the multi call method
+        # this is because the multi call method uses lax.switch
         self.__call__ = (
             self.__single_call__ if len(self.funcs) == 1 else self.__multi_call__
         )
 
     def reduce_scan_func(self, func, *args, **kwargs) -> Callable:
         if self.relative:
+            # if the function is relative, the function is applied to the view
+            # the result is a 1D array of the same length as the number of views
             return lambda view, array: array.at[self.index_from_view(view)].set(
                 func(roll_view(array[ix_(*view)]), *args, **kwargs)
             )
@@ -64,7 +69,6 @@ class baseKernelScan(kernelOperation):
 @pytc.treeclass
 class kernelScan(baseKernelScan):
     def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
-
         super().__init__(func_dict, shape, kernel_size, strides, padding, relative)
 
     def __call__(self, array, *args, **kwargs):

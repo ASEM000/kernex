@@ -12,6 +12,8 @@ from jax import vmap
 
 
 class cached_property:
+    """this function is a decorator that caches the result of the function"""
+
     def __init__(self, func):
         self.name = func.__name__
         self.func = func
@@ -35,7 +37,8 @@ def ZIP(*args):
 
 def _offset_to_padding(input_argument, kernel_size):
     """convert offset argument to negative border values"""
-
+    # for example for a kernel_size = (3,3) and offset = (1,1)
+    # the padding will be (-1,-1) for each dimension
     padding = [[]] * len(kernel_size)
 
     # offset = 1 ==> padding= 0 for kernel_size =3
@@ -70,6 +73,7 @@ def roll_view(array: jnp.ndarray) -> jnp.ndarray:
         [ 3  4  5  1  2]
         [ 8  9 10  6  7]]
     """
+    # this function is used to roll the view along all axes
     shape = jnp.array(array.shape)
     axes = tuple(range(len(shape)))  # list all axes
     shift = tuple(
@@ -114,6 +118,7 @@ def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
             [1 2 3]
             [2 3 4]]
     """
+    # this function is used to calculate the windows indices for a given dimension
     start, end = -x0 + ((ki - 1) // 2), di + xf - (ki // 2)
     size = end - start
     lhs = jax.lax.broadcasted_iota(dtype=jnp.int32, shape=(size, ki), dimension=0) + (start)  # fmt: skip
@@ -170,7 +175,6 @@ def _index_from_view(
     Returns:
         tuple[int, ...]: index as a tuple of int for each dimension
     """
-
     return tuple(
         view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) // 2]
         for i, wi in enumerate(kernel_size)

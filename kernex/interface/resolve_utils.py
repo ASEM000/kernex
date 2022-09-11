@@ -99,66 +99,64 @@ def _resolve_dict_argument(
     return tuple(temp)
 
 
-@dispatch(argnum=0)
 def _resolve_offset_argument(input_argument, kernel_size):
-    raise NotImplementedError(
-        "input_argument type={} is not implemented".format(type(input_argument))
-    )
+    @dispatch(argnum=0)
+    def __resolve_offset_argument(input_argument, kernel_size):
+        raise NotImplementedError(
+            "input_argument type={} is not implemented".format(type(input_argument))
+        )
 
+    @__resolve_offset_argument.register(int)
+    def _(input_argument, kernel_size):
+        return [(input_argument, input_argument)] * len(kernel_size)
 
-@_resolve_offset_argument.register(int)
-def _(input_argument, kernel_size):
-    return [(input_argument, input_argument)] * len(kernel_size)
+    @__resolve_offset_argument.register(list)
+    @__resolve_offset_argument.register(tuple)
+    def _(input_argument, kernel_size):
+        offset = [[]] * len(kernel_size)
 
+        for i, item in enumerate(input_argument):
+            offset[i] = (item, item) if isinstance(item, int) else item
 
-@_resolve_offset_argument.register(list)
-@_resolve_offset_argument.register(tuple)
-def _(input_argument, kernel_size):
-    offset = [[]] * len(kernel_size)
+        return offset
 
-    for i, item in enumerate(input_argument):
-        offset[i] = (item, item) if isinstance(item, int) else item
-
-    return offset
-
-
-@dispatch(argnum=0)
-def __resolve_index_step(index, shape):
-    raise NotImplementedError(f"index type={type(index)} is not implemented")
-
-
-@__resolve_index_step.register(int)
-def _(index, shape):
-    index += shape if index < 0 else 0
-    return index
-
-
-@__resolve_index_step.register(slice)
-def _(index, shape):
-    start, end, step = index.start, index.stop, index.step
-
-    start = start or 0
-    start += shape if start < 0 else 0
-
-    end = end or shape
-    end += shape if end < 0 else 0
-
-    step = step or 1
-
-    return (start, end, step)
-
-
-@__resolve_index_step.register(list)
-@__resolve_index_step.register(tuple)
-def _(index, shape):
-    assert all(
-        isinstance(i, int) for i in jax.tree_util.tree_leaves(index)
-    ), "All items in tuple must be int"
-    return index
+    return __resolve_offset_argument(input_argument, kernel_size)
 
 
 def _resolve_index(index, shape):
     """Resolve index to a tuple of int"""
+
+    @dispatch(argnum=0)
+    def __resolve_index_step(index, shape):
+        raise NotImplementedError(f"index type={type(index)} is not implemented")
+
+    @__resolve_index_step.register(int)
+    def _(index, shape):
+        index += shape if index < 0 else 0
+        return index
+
+    @__resolve_index_step.register(slice)
+    def _(index, shape):
+        start, end, step = index.start, index.stop, index.step
+
+        start = start or 0
+        start += shape if start < 0 else 0
+
+        end = end or shape
+        end += shape if end < 0 else 0
+
+        step = step or 1
+
+        return (start, end, step)
+
+    @__resolve_index_step.register(list)
+    @__resolve_index_step.register(tuple)
+    def _(index, shape):
+        assert all(
+            isinstance(i, int) for i in jax.tree_util.tree_leaves(index)
+        ), "All items in tuple must be int"
+        return index
+
     index = [index] if not isinstance(index, tuple) else index
     resolved_index = [[]] * len(index)
 

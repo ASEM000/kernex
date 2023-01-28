@@ -1,8 +1,8 @@
 <div align = "center">
 <img  width=300px src="assets/kernexlogo.svg" align="center">
-</div>
 
-<h2 align="center">Differentiable Stencil computations in JAX </h2>
+
+<h3 align="center">Differentiable Stencil computations in JAX </h2>
 
 [**Installation**](#Installation)
 |[**Description**](#Description)
@@ -18,6 +18,8 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/14UEqKzIyZsDzQ9IMeanvztXxbbbatTYV?usp=sharing)
 [![codecov](https://codecov.io/gh/ASEM000/kernex/branch/main/graph/badge.svg?token=3KLL24Z94I)](https://codecov.io/gh/ASEM000/kernex)
 [![DOI](https://zenodo.org/badge/512400616.svg)](https://zenodo.org/badge/latestdoi/512400616)
+
+</div>
 
 ## 🛠️ Installation<a id="Installation"></a>
 
@@ -311,6 +313,7 @@ $\Large u_i^{n} = u_i^{n-1} - c \frac{\Delta t}{\Delta x}(u_i^{n-1}-u_{i-1}^{n-1
 
 
 ```python
+
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -425,6 +428,27 @@ print(kernex_depthwise_conv2d(x,w))</summary>
 ```    
         
 </details>
+
+<details> <summary>7️⃣ Maxpooling2D and Averagepooling2D </summary>
+
+```python
+@jax.vmap # vectorize over the channel dimension
+@kex.kmap(kernel_size=(3,3), strides=(2,2))
+def maxpool_2d(x):
+    # define the kernel for the Maxpool operation over the spatial dimensions
+    return jnp.max(x)
+
+@jax.vmap # vectorize over the channel dimension
+@kex.kmap(kernel_size=(3,3), strides=(2,2))
+def avgpool_2d(x):
+    # define the kernel for the Average pool operation over the spatial dimensions
+    return jnp.mean(x)
+```
+
+
+</details>
+
+
 
 ## ⌛ Benchmarking<a id="Benchmarking"></a>
 

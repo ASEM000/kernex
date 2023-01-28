@@ -371,10 +371,60 @@ for line in kx_solution[::20]:
 
 </details>
 
+    
+<details><summary>5️⃣ Gaussian blur</summary>
+
+```python
+    
+import jax 
+import jax.numpy as jnp
+import kernex as kex
+
+def gaussian_blur(image, sigma, kernel_size):
+    x = jnp.linspace(-(kernel_size - 1) / 2.0, (kernel_size- 1) / 2.0, kernel_size)
+    w = jnp.exp(-0.5 * jnp.square(x) * jax.lax.rsqrt(sigma))
+    w = jnp.outer(w, w)
+    w = w / w.sum()
+
+    @kex.kmap(kernel_size=(kernel_size, kernel_size), padding="same")
+    def conv(x):
+        return jnp.sum(x * w)    
+    
+    return conv(image)
+    
+    
 ```
+    
+</details>
 
-   </details>
 
+<details > <summary>6️⃣ Depthwise convolution </summary>
+     
+```python     
+import jax
+import jax.numpy as jnp
+import kernex as kex
+
+@jax.jit
+@jax.vmap
+@kex.kmap(
+    kernel_size= (3,3),
+    padding = ('same','same'))
+def kernex_depthwise_conv2d(x,w):
+    # Channel-first depthwise convolution
+    # jax.debug.print("x=\n{a}\nw=\n{b} \n\n",a=x, b=w)
+    return jnp.sum(x*w)
+
+
+h,w,c = 5,5,2
+k=3
+
+x = jnp.arange(1,h*w*c+1).reshape(c,h,w)
+w = jnp.arange(1,k*k*c+1).reshape(c,k,k)
+print(kernex_depthwise_conv2d(x,w))</summary>
+```    
+        
+</details>
 
 ## ⌛ Benchmarking<a id="Benchmarking"></a>
 

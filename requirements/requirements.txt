@@ -1,3 +1,4 @@
 
 jax>=0.3.5
 pytreeclass>=0.1.9
+numpy>=1.22.2 # not directly required, pinned by Snyk to avoid a vulnerability

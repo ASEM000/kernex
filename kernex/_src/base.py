@@ -9,8 +9,6 @@ import pytreeclass as pytc
 
 from kernex._src.utils import ZIP, _key_search, general_arange, general_product
 
-slice_index = tuple[int, ...]
-
 
 @pytc.treeclass
 class kernelOperation:

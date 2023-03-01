@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import functools as ft
 from typing import Callable
 
+import jax
+import jax.numpy as jnp
 import pytreeclass as pytc
 from jax import lax
-from jax import numpy as jnp
-from jax import vmap
 
 from kernex._src.base import kernelOperation
-from kernex._src.utils import ZIP, _offset_to_padding, cached_property, ix_, roll_view
+from kernex._src.utils import ZIP, _offset_to_padding, ix_, roll_view
 
 
 @pytc.treeclass
@@ -31,8 +32,7 @@ class baseKernelMap(kernelOperation):
                 roll_view(array[ix_(*view)]), *args, **kwargs
             )
 
-        else:
-            return lambda view, array: func(array[ix_(*view)], *args, **kwargs)
+        return lambda view, array: func(array[ix_(*view)], *args, **kwargs)
 
     def __single_call__(self, array: jnp.ndarray, *args, **kwargs):
         padded_array = jnp.pad(array, self.pad_width)
@@ -43,7 +43,7 @@ class baseKernelMap(kernelOperation):
 
         # apply the function to each view using vmap
         # the result is a 1D array of the same length as the number of views
-        result = vmap(lambda view: reduced_func(view, padded_array))(self.views)
+        result = jax.vmap(lambda view: reduced_func(view, padded_array))(self.views)
 
         # reshape the result to the output shape
         # for example if the input shape is (3, 3) and the kernel shape is (2, 2)
@@ -65,7 +65,7 @@ class baseKernelMap(kernelOperation):
         # here, lax.switch is used to apply the functions in order
         # the first function is applied to the first view, the second function
         # is applied to the second view, and so on
-        result = vmap(
+        result = jax.vmap(
             lambda view: lax.switch(
                 self.func_index_from_view(view), reduced_funcs, view, padded_array
             )
@@ -78,9 +78,6 @@ class baseKernelMap(kernelOperation):
 @pytc.treeclass
 class kernelMap(baseKernelMap):
     """A class for applying a function to a kernel map of an array"""
-
-    def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
-        super().__init__(func_dict, shape, kernel_size, strides, padding, relative)
 
     def __call__(self, array, *args, **kwargs):
         return self.__call__(array, *args, **kwargs)
@@ -105,7 +102,7 @@ class offsetKernelMap(kernelMap):
             relative,
         )
 
-    @cached_property
+    @ft.cached_property
     def set_indices(self):
         # the indices of the array that are set by the kernel operation
         # this is used to set the values of the array after the kernel operation

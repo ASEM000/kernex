@@ -3,7 +3,7 @@ from functools import reduce
 import jax.numpy as jnp
 from numpy.testing import assert_array_equal
 
-from kernex._src.utils import cached_property, roll_view
+from kernex._src.utils import roll_view
 
 # helper function to construct nd arrays
 mat = lambda *args: jnp.arange(1, reduce(lambda x, y: x * y, args) + 1).reshape(*args)
@@ -28,25 +28,6 @@ def test_roll_view():
     )
 
 
-def test_cached_property():
-    class test:
-        def __init__(self, counter):
-            self.counter = counter
-
-        @cached_property
-        def counter_cached_property(self):
-            return self.counter
-
-        @property
-        def counter_property(self):
-            return self.counter
-
-    a = test(counter=10)
-    assert a.counter_property == 10
-    assert a.counter_cached_property == 10
-    a.counter += 1
-    assert a.counter_property == 11
-    assert a.counter_cached_property == 10
 
 
 # def test_key_switch():

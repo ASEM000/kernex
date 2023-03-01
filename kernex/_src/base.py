@@ -1,34 +1,29 @@
 from __future__ import annotations
 
+import functools as ft
 from itertools import product
 from typing import Any, Callable
 
+import jax.numpy as jnp
 import pytreeclass as pytc
 
-# from pytreeclass._src.tree_base import _treeBase
-from jax import numpy as jnp
+from kernex._src.utils import ZIP, _key_search, general_arange, general_product
 
-from kernex._src.utils import (
-    ZIP,
-    _key_search,
-    cached_property,
-    general_arange,
-    general_product,
-)
+slice_index = tuple[int, ...]
 
 
 @pytc.treeclass
 class kernelOperation:
     """base class for all kernel operations"""
 
-    func_index_map: dict[Callable[[Any], jnp.ndarray] : tuple[int, ...]] = pytc.static_field(repr=False)  # fmt: skip
-    shape: tuple[int, ...] = pytc.static_field()
-    kernel_size: tuple[int, ...] = pytc.static_field()
-    strides: tuple[int, ...] = pytc.static_field()
-    border: tuple[tuple[int, int], ...] = pytc.static_field()
-    relative: bool = pytc.static_field()
+    func_index_map: dict = pytc.field(callbacks=[pytc.freeze])
+    shape: tuple[int, ...] = pytc.field(callbacks=[pytc.freeze])
+    kernel_size: tuple[int, ...] = pytc.field(callbacks=[pytc.freeze])
+    strides: tuple[int, ...] = pytc.field(callbacks=[pytc.freeze])
+    border: tuple[tuple[int, int], ...] = pytc.field(callbacks=[pytc.freeze])
+    relative: bool = pytc.field(callbacks=[pytc.freeze])
 
-    @cached_property
+    @ft.cached_property
     def pad_width(self):
         """Calcuate the positive padding from border value
 
@@ -41,7 +36,7 @@ class kernelOperation:
         # if the border is positive, the padding is the border value
         return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in self.border)
 
-    @cached_property
+    @ft.cached_property
     def output_shape(self) -> tuple[int, ...]:
         """Calculate the output shape of the kernel operation from
         the input shape, kernel size, stride and border.
@@ -60,7 +55,7 @@ class kernelOperation:
             )
         )
 
-    @cached_property
+    @ft.cached_property
     def views(self) -> tuple[jnp.ndarray, ...]:
         """Generate absolute sampling matrix"""
         # this function is cached because it is called multiple times
@@ -76,7 +71,7 @@ class kernelOperation:
         matrix = general_product(*dim_range)
         return tuple(map(lambda xi, wi: xi.reshape(-1, wi), matrix, self.kernel_size))
 
-    @cached_property
+    @ft.cached_property
     def indices(self):
         return tuple(product(*[range(d) for d in self.shape]))
 

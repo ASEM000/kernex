@@ -9,7 +9,7 @@ import functools
 from dataclasses import dataclass, field
 from typing import Callable
 
-from jax import numpy as jnp
+import jax.numpy as jnp
 
 from kernex._src.map import kernelMap, offsetKernelMap
 from kernex._src.scan import kernelScan, offsetKernelScan

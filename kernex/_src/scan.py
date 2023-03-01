@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import functools as ft
 from typing import Callable
 
+import jax.numpy as jnp
 import pytreeclass as pytc
 from jax import lax
-from jax import numpy as jnp
 
 from kernex._src.base import kernelOperation
-from kernex._src.utils import ZIP, _offset_to_padding, cached_property, ix_, roll_view
+from kernex._src.utils import ZIP, _offset_to_padding, ix_, roll_view
 
 
 @pytc.treeclass
@@ -16,7 +17,7 @@ class baseKernelScan(kernelOperation):
         # if there is only one function, use the single call method
         # this is faster than the multi call method
         # this is because the multi call method uses lax.switch
-        self.__call__ = (
+        self._call = (
             self.__single_call__ if len(self.funcs) == 1 else self.__multi_call__
         )
 
@@ -28,10 +29,9 @@ class baseKernelScan(kernelOperation):
                 func(roll_view(array[ix_(*view)]), *args, **kwargs)
             )
 
-        else:
-            return lambda view, array: array.at[self.index_from_view(view)].set(
-                func(array[ix_(*view)], *args, **kwargs)
-            )
+        return lambda view, array: array.at[self.index_from_view(view)].set(
+            func(array[ix_(*view)], *args, **kwargs)
+        )
 
     def __single_call__(self, array, *args, **kwargs):
 
@@ -68,11 +68,8 @@ class baseKernelScan(kernelOperation):
 
 @pytc.treeclass
 class kernelScan(baseKernelScan):
-    def __init__(self, func_dict, shape, kernel_size, strides, padding, relative):
-        super().__init__(func_dict, shape, kernel_size, strides, padding, relative)
-
     def __call__(self, array, *args, **kwargs):
-        return self.__call__(array, *args, **kwargs)
+        return self._call(array, *args, **kwargs)
 
 
 @pytc.treeclass
@@ -90,7 +87,7 @@ class offsetKernelScan(kernelScan):
             relative,
         )
 
-    @cached_property
+    @ft.cached_property
     def __set_indices__(self):
         return tuple(
             jnp.arange(x0, di - xf, si)
@@ -100,6 +97,6 @@ class offsetKernelScan(kernelScan):
         )
 
     def __call__(self, array, *args, **kwargs):
-        result = self.__call__(array, *args, **kwargs)
+        result = self._call(array, *args, **kwargs)
         assert result.shape <= array.shape, "scan operation output must be scalar."
         return array.at[ix_(*self.__set_indices__)].set(result)

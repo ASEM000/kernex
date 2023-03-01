@@ -7,31 +7,14 @@ from __future__ import annotations
 import functools as ft
 
 import jax
-from jax import numpy as jnp
-from jax import vmap
-
-
-class cached_property:
-    """this function is a decorator that caches the result of the function"""
-
-    def __init__(self, func):
-        self.name = func.__name__
-        self.func = func
-
-    def __get__(self, instance, owner):
-        attr = self.func(instance)
-        object.__setattr__(instance, self.name, attr)
-        return attr
+import jax.numpy as jnp
 
 
 def ZIP(*args):
     """assert all args have the same number of elements before zipping"""
     n = len(args[0])
-
-    assert all(
-        len(x) == n for x in args[1:]
-    ), f"zip arguments dont have the same length. Args length = {tuple(len(arg) for arg in args)}"
-
+    msg = f"zip arguments dont have the same length. Args length = {tuple(len(arg) for arg in args)}"
+    assert all(len(x) == n for x in args[1:]), msg
     return zip(*args)
 
 
@@ -155,9 +138,9 @@ def general_product(*args):
         in_axes = [None] * len(args)
         in_axes[-n] = 0
         return (
-            vmap(lambda *x: x, in_axes=in_axes)
+            jax.vmap(lambda *x: x, in_axes=in_axes)
             if n == 1
-            else vmap(nvmap(n - 1), in_axes=in_axes)
+            else jax.vmap(nvmap(n - 1), in_axes=in_axes)
         )
 
     return nvmap(len(args))(*args)

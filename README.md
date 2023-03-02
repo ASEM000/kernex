@@ -1,5 +1,5 @@
 <div align = "center">
-<img  width=300px src="assets/kernexlogo.svg" align="center">
+<img  width=400 src="assets/kernexlogo.svg" align="center">
 
 
 <h3 align="center">Differentiable Stencil computations in JAX </h2>

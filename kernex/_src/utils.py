@@ -1,38 +1,81 @@
-"""
-[credits] Mahmoud Asem@CVBML KAIST May 2022
-"""
+# [credits] Mahmoud Asem@CVBML KAIST May 2022
+
 
 from __future__ import annotations
 
 import functools as ft
 
 import jax
-from jax import numpy as jnp
-from jax import vmap
-
-
-class cached_property:
-    """this function is a decorator that caches the result of the function"""
-
-    def __init__(self, func):
-        self.name = func.__name__
-        self.func = func
-
-    def __get__(self, instance, owner):
-        attr = self.func(instance)
-        object.__setattr__(instance, self.name, attr)
-        return attr
+import jax.numpy as jnp
 
 
 def ZIP(*args):
     """assert all args have the same number of elements before zipping"""
     n = len(args[0])
-
-    assert all(
-        len(x) == n for x in args[1:]
-    ), f"zip arguments dont have the same length. Args length = {tuple(len(arg) for arg in args)}"
-
+    msg = f"zip arguments dont have the same length. Args length = {tuple(len(arg) for arg in args)}"
+    assert all(len(x) == n for x in args[1:]), msg
     return zip(*args)
+
+
+def _calculate_pad_width(border: tuple[tuple[int, int], ...]):
+    """Calcuate the positive padding from border value
+
+    Returns:
+        padding value passed to `pad_width` in `jnp.pad`
+    """
+    # this function is cached because it is called multiple times
+    # and it is expensive to calculate
+    # if the border is negative, the padding is 0
+    # if the border is positive, the padding is the border value
+    return tuple([0, max(0, pi[0]) + max(0, pi[1])] for pi in border)
+
+
+def _get_index_from_view(view, kernel_size) -> tuple[int, ...]:
+    """Get the index of array from the view
+
+    Args:
+        view (tuple[jnp.ndarray,...]): patch indices for each dimension
+
+    Returns:
+        tuple[int, ...]: index as a tuple of int for each dimension
+    """
+
+    return tuple(
+        view[i][wi // 2] if wi % 2 == 1 else view[i][(wi - 1) // 2]
+        for i, wi in enumerate(kernel_size)
+    )
+
+
+@ft.partial(jax.jit, static_argnums=(0, 1, 2, 3))
+def _generate_views(shape, kernel_size, strides, border) -> tuple[jnp.ndarray, ...]:
+    """Generate absolute sampling matrix"""
+    # this function is cached because it is called multiple times
+    # and it is expensive to calculate
+    # the view is the indices of the array that is used to calculate
+    # the output value
+    dim_range = tuple(
+        general_arange(di, ki, si, x0, xf)
+        for (di, ki, si, (x0, xf)) in zip(shape, kernel_size, strides, border)
+    )
+    matrix = general_product(*dim_range)
+    return tuple(map(lambda xi, wi: xi.reshape(-1, wi), matrix, kernel_size))
+
+
+def _calculate_output_shape(shape, kernel_size, strides, border) -> tuple[int, ...]:
+    """Calculate the output shape of the kernel operation from
+    the input shape, kernel size, stride and border.
+
+    Returns:
+        tuple[int, ...]: resulting shape of the kernel operation
+    """
+    # this function is cached because it is called multiple times
+    # and it is expensive to calculate
+    # the output shape is the shape of the array after the kernel operation
+    # is applied to the input array
+    return tuple(
+        (xi + (li + ri) - ki) // si + 1
+        for xi, ki, si, (li, ri) in ZIP(shape, kernel_size, strides, border)
+    )
 
 
 def _offset_to_padding(input_argument, kernel_size):
@@ -93,7 +136,18 @@ def ix_(*args):
     return tuple(output)
 
 
+@ft.partial(jax.jit, static_argnums=(0, 1, 2))
+def _get_set_indices(shape, strides, offset):
+    # the indices of the array that are set by the kernel operation
+    # this is used to set the values of the array after the kernel operation
+    # is applied
+    return tuple(
+        jnp.arange(x0, di - xf, si) for di, si, (x0, xf) in ZIP(shape, strides, offset)
+    )
+
+
 @ft.partial(jax.profiler.annotate_function, name="general_arange")
+@ft.partial(jax.jit, static_argnums=(0, 1, 2, 3, 4))
 def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
     """Calculate the windows indices for a given dimension.
 
@@ -155,14 +209,15 @@ def general_product(*args):
         in_axes = [None] * len(args)
         in_axes[-n] = 0
         return (
-            vmap(lambda *x: x, in_axes=in_axes)
+            jax.vmap(lambda *x: x, in_axes=in_axes)
             if n == 1
-            else vmap(nvmap(n - 1), in_axes=in_axes)
+            else jax.vmap(nvmap(n - 1), in_axes=in_axes)
         )
 
     return nvmap(len(args))(*args)
 
 
+@ft.partial(jax.jit, static_argnums=(0, 1))
 def _index_from_view(
     view: tuple[jnp.ndarray, ...], kernel_size: tuple[int, ...]
 ) -> tuple[int, ...]:
@@ -207,16 +262,17 @@ def _compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool
             return (yi[0] <= xi) * (xi < yi[1]) * (xi % yi[2] == 0)
 
         # index style = (start,end )
-        elif yi.size == 2:
+        if yi.size == 2:
             return (yi[0] <= xi) * (xi < yi[1])
 
         # index style = (index)
-        elif yi.size == 1:
+        if yi.size == 1:
             return jnp.where(yi == jnp.inf, True, xi == yi)
 
     return jnp.all(jnp.array([_compare_key_item(xi, yi) for (xi, yi) in zip(x, y)]))
 
 
+@jax.jit
 def _key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray]) -> int:
     """returns the index of the key in the keys array if key is within the key range or equal to it.
 

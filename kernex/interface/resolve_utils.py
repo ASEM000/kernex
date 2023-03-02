@@ -3,8 +3,8 @@ from __future__ import annotations
 import functools as ft
 from typing import Any, Callable
 
-import jax
 import jax.numpy as jnp
+import jax.tree_util as jtu
 
 from kernex._src.utils import ZIP
 
@@ -20,10 +20,9 @@ def _resolve_padding_argument(
     if isinstance(input_argument, tuple):
         same = lambda wi: ((wi - 1) // 2, wi // 2)
 
-        assert len(input_argument) == len(kernel_size), (
-            "kernel_size dimension != padding dimension.",
-            f"Found length(kernel_size)={len(kernel_size)} length(padding)={len(input_argument)}",
-        )
+        msg = "kernel_size dimension != padding dimension."
+        msg += f"Found length(kernel_size)={len(kernel_size)} length(padding)={len(input_argument)}"
+        assert len(input_argument) == len(kernel_size), msg
 
         padding = [[]] * len(kernel_size)
 
@@ -42,27 +41,26 @@ def _resolve_padding_argument(
                     padding[i] = (0, 0)
 
                 else:
-                    raise ValueError(
-                        f'string argument must be in ["same","SAME","VALID","valid"].Found {item}'
-                    )
+                    msg = f'string argument must be in ["same","SAME","VALID","valid"].Found {item}'
+                    raise ValueError(msg)
         return tuple(padding)
 
-    elif isinstance(input_argument, int):
+    if isinstance(input_argument, int):
         return ((input_argument, input_argument),) * len(kernel_size)
 
-    elif isinstance(input_argument, str):
+    if isinstance(input_argument, str):
         same = lambda wi: ((wi - 1) // 2, wi // 2)
 
         if input_argument.lower() == "same":
             return tuple(same(wi) for wi in kernel_size)
 
-        elif input_argument.lower() == "valid":
+        if input_argument.lower() == "valid":
             return ((0, 0),) * len(kernel_size)
 
-        else:
-            raise ValueError(
-                f'string argument must be in ["same","SAME","VALID","valid"].Found {input_argument}'
-            )
+        msg = f'string argument must be in ["same","SAME","VALID","valid"].Found {input_argument}'
+        raise ValueError(msg)
+
+    raise TypeError("input_argument must be tuple or int or str")
 
 
 def _resolve_dict_argument(
@@ -100,13 +98,11 @@ def _resolve_offset_argument(input_argument, kernel_size):
 
         return offset
 
-    elif isinstance(input_argument, int):
+    if isinstance(input_argument, int):
         return [(input_argument, input_argument)] * len(kernel_size)
 
-    else:
-        raise NotImplementedError(
-            "input_argument type={} is not implemented".format(type(input_argument))
-        )
+    msg = f"input_argument type={type(input_argument)} is not implemented"
+    raise NotImplementedError(msg)
 
 
 def _resolve_index(index, shape):
@@ -117,7 +113,7 @@ def _resolve_index(index, shape):
             index += shape if index < 0 else 0
             return index
 
-        elif isinstance(index, slice):
+        if isinstance(index, slice):
             start, end, step = index.start, index.stop, index.step
 
             start = start or 0
@@ -130,14 +126,12 @@ def _resolve_index(index, shape):
 
             return (start, end, step)
 
-        elif isinstance(index, (list, tuple)):
-            assert all(
-                isinstance(i, int) for i in jax.tree_util.tree_leaves(index)
-            ), "All items in tuple must be int"
+        if isinstance(index, (list, tuple)):
+            msg = "All items in tuple must be int"
+            assert all(isinstance(i, int) for i in jtu.tree_leaves(index)), msg
             return index
 
-        else:
-            raise NotImplementedError(f"index type={type(index)} is not implemented")
+        raise NotImplementedError(f"index type={type(index)} is not implemented")
 
     index = [index] if not isinstance(index, tuple) else index
     resolved_index = [[]] * len(index)
@@ -149,8 +143,8 @@ def _resolve_index(index, shape):
 
 
 def _normalize_slices(
-    container: dict[Callable[Any], jnp.ndarray], in_dim: tuple[int, ...]
-) -> dict[Callable[Any], jnp.ndarray]:
+    container: dict[Callable, jnp.ndarray], in_dim: tuple[int, ...]
+) -> dict[Callable, jnp.ndarray]:
     """Convert slice with partial range to tuple with determined range"""
 
     for func, slices in container.items():
@@ -165,28 +159,24 @@ def _resolve_kernel_size(arg, in_dim):
     kw = "kernel_size"
 
     if isinstance(arg, tuple):
-        assert all(isinstance(wi, int) for wi in arg), (
-            f"{kw}  input must be a tuple of int.\n"
-            f"Found {tuple(type(wi) for wi in arg  )}"
-        )
+        msg = f"{kw}  input must be a tuple of int.\n"
+        msg += f"Found {tuple(type(wi) for wi in arg  )}"
+        assert all(isinstance(wi, int) for wi in arg), msg
 
-        assert len(arg) == len(in_dim), (
-            f"{kw}  dimension must be equal to array dimension.",
-            f"Found len({arg }) != len{(in_dim)}",
-        )
+        msg = f"{kw}  dimension must be equal to array dimension."
+        msg += f"Found len({arg }) != len{(in_dim)}"
+        assert len(arg) == len(in_dim), msg
 
-        assert all(ai <= si for (ai, si) in zip(arg, in_dim)), (
-            f"{kw} shape must be less than array shape.\n",
-            f"Found {kw}  = {arg } array shape = {in_dim} ",
-        )
+        msg = f"{kw} shape must be less than array shape.\n"
+        msg += f"Found {kw}  = {arg } array shape = {in_dim} "
+        assert all(ai <= si for (ai, si) in zip(arg, in_dim)), msg
 
         return tuple(si if wi == -1 else wi for si, wi in ZIP(in_dim, arg))
 
-    elif isinstance(arg, int):
+    if isinstance(arg, int):
         return (in_dim if arg == -1 else arg) * len(in_dim)
 
-    else:
-        raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")
+    raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")
 
 
 @ft.lru_cache(maxsize=None)
@@ -212,8 +202,7 @@ def _resolve_strides(arg, in_dim):
 
         return arg
 
-    elif isinstance(arg, int):
+    if isinstance(arg, int):
         return (arg,) * len(in_dim)
 
-    else:
-        raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")
+    raise ValueError(f"{kw}  must be instance of int or tuple. Found {type(arg)}")

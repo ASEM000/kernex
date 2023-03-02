@@ -5,14 +5,14 @@ This script defines the decorators and class object
 
 from __future__ import annotations
 
+import dataclasses as dc
 import functools
-from dataclasses import dataclass, field
 from typing import Callable
 
-from jax import numpy as jnp
+import jax.numpy as jnp
 
-from kernex._src.map import kernelMap, offsetKernelMap
-from kernex._src.scan import kernelScan, offsetKernelScan
+from kernex._src.map import kernel_map, offset_kernel_map
+from kernex._src.scan import kernel_scan, offset_kernel_scan
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
     _normalize_slices,
@@ -23,17 +23,17 @@ from kernex.interface.resolve_utils import (
 )
 
 
-@dataclass
+@dc.dataclass
 class kernelInterface:
 
-    kernel_size: tuple[int, ...] | int = field()
-    strides: tuple[int, ...] | int = field(default=1)
-    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = field(default=0, repr=False)  # fmt: skip
-    relative: bool = field(default=False)
-    inplace: bool = field(default=False)
-    use_offset: bool = field(default=False)
-    named_axis: dict[int, str] | None = field(default=None)
-    container: dict[Callable, slice | int] = field(default_factory=dict)
+    kernel_size: tuple[int, ...] | int
+    strides: tuple[int, ...] | int = 1
+    border: tuple[int, ...] | tuple[tuple[int, int], ...] | int | str = dc.field(default=0, repr=False)  # fmt: skip
+    relative: bool = False
+    inplace: bool = False
+    use_offset: bool = False
+    named_axis: dict[int, str] | None = None
+    container: dict[Callable, slice | int] = dc.field(default_factory=dict)
 
     def __post_init__(self):
         """resolve the border values and the kernel operation"""
@@ -45,9 +45,8 @@ class kernelInterface:
 
     def __setitem__(self, index, func):
 
-        assert isinstance(
-            func, Callable
-        ), f"Input must be of type Callable. Found {type(func)}"
+        msg = f"Input must be of type Callable. Found {type(func)}"
+        assert isinstance(func, Callable), msg
 
         # append slice/index to func key list
         self.container[func] = [*self.container.get(func, []), index]
@@ -70,9 +69,9 @@ class kernelInterface:
                 self.resolved_container[func] = index
 
         kernel_op = (
-            (offsetKernelScan if self.inplace else offsetKernelMap)
+            (offset_kernel_scan if self.inplace else offset_kernel_map)
             if self.use_offset
-            else (kernelScan if self.inplace else kernelMap)
+            else (kernel_scan if self.inplace else kernel_map)
         )
 
         return kernel_op(
@@ -86,24 +85,20 @@ class kernelInterface:
 
     def _wrap_decorator(self, func):
         def call(array, *args, **kwargs):
-            object.__setattr__(self, "shape", array.shape)  # fmt: skip
-            object.__setattr__(self, "kernel_size", _resolve_kernel_size(self.kernel_size, self.shape))  # fmt: skip
-            object.__setattr__(self, "strides", _resolve_strides(self.strides, self.shape))  # fmt: skip
+            self.shape = array.shape
+            self.kernel_size = _resolve_kernel_size(self.kernel_size, self.shape)
+            self.strides = _resolve_strides(self.strides, self.shape)
 
-            object.__setattr__(
-                self,
-                "resolved_container",
-                {
-                    named_axis_wrapper(self.kernel_size, self.named_axis)(func)
-                    if self.named_axis is not None
-                    else func: ()
-                },
-            )
+            self.resolved_container = {
+                named_axis_wrapper(self.kernel_size, self.named_axis)(func)
+                if self.named_axis is not None
+                else func: ()
+            }
 
             kernel_op = (
-                (offsetKernelScan if self.inplace else offsetKernelMap)
+                (offset_kernel_scan if self.inplace else offset_kernel_map)
                 if self.use_offset
-                else (kernelScan if self.inplace else kernelMap)
+                else (kernel_scan if self.inplace else kernel_map)
             )
 
             return kernel_op(
@@ -122,18 +117,14 @@ class kernelInterface:
         if len(args) == 1 and callable(args[0]) and len(kwargs) == 0:
             return functools.wraps(args[0])(self._wrap_decorator(args[0]))
 
-        elif len(args) > 0 and isinstance(args[0], jnp.ndarray):
+        if len(args) > 0 and isinstance(args[0], jnp.ndarray):
             return self._wrap_mesh(*args, **kwargs)
 
-        else:
-            raise ValueError(
-                (
-                    f"Expected `jnp.ndarray` or `Callable` for the first argument. Found {tuple(*args,**kwargs)}"
-                )
-            )
+        msg = f"Expected `jnp.ndarray` or `Callable` for the first argument. Found {tuple(*args,**kwargs)}"
+        raise ValueError(msg)
 
 
-@dataclass
+@dc.dataclass
 class sscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -150,7 +141,7 @@ class sscan(kernelInterface):
         )
 
 
-@dataclass
+@dc.dataclass
 class smap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, offset=0, relative=False, named_axis=None
@@ -167,7 +158,7 @@ class smap(kernelInterface):
         )
 
 
-@dataclass
+@dc.dataclass
 class kscan(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None
@@ -184,7 +175,7 @@ class kscan(kernelInterface):
         )
 
 
-@dataclass
+@dc.dataclass
 class kmap(kernelInterface):
     def __init__(
         self, kernel_size=1, strides=1, padding=0, relative=False, named_axis=None

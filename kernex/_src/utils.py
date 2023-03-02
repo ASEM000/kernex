@@ -18,7 +18,6 @@ def ZIP(*args):
     return zip(*args)
 
 
-@ft.lru_cache
 def _calculate_pad_width(border: tuple[tuple[int, int], ...]):
     """Calcuate the positive padding from border value
 
@@ -48,7 +47,7 @@ def _get_index_from_view(view, kernel_size) -> tuple[int, ...]:
     )
 
 
-@ft.lru_cache(maxsize=None)
+@ft.partial(jax.jit, static_argnums=(0, 1, 2, 3))
 def _generate_views(shape, kernel_size, strides, border) -> tuple[jnp.ndarray, ...]:
     """Generate absolute sampling matrix"""
     # this function is cached because it is called multiple times
@@ -63,7 +62,6 @@ def _generate_views(shape, kernel_size, strides, border) -> tuple[jnp.ndarray, .
     return tuple(map(lambda xi, wi: xi.reshape(-1, wi), matrix, kernel_size))
 
 
-@ft.lru_cache(maxsize=None)
 def _calculate_output_shape(shape, kernel_size, strides, border) -> tuple[int, ...]:
     """Calculate the output shape of the kernel operation from
     the input shape, kernel size, stride and border.
@@ -80,7 +78,7 @@ def _calculate_output_shape(shape, kernel_size, strides, border) -> tuple[int, .
         for xi, ki, si, (li, ri) in ZIP(shape, kernel_size, strides, border)
     )
 
-@ft.lru_cache(maxsize=None)
+
 def _offset_to_padding(input_argument, kernel_size):
     """convert offset argument to negative border values"""
     # for example for a kernel_size = (3,3) and offset = (1,1)
@@ -139,7 +137,7 @@ def ix_(*args):
     return tuple(output)
 
 
-@ft.lru_cache(maxsize=None)
+@ft.partial(jax.jit, static_argnums=(0, 1, 2))
 def _get_set_indices(shape, strides, offset):
     # the indices of the array that are set by the kernel operation
     # this is used to set the values of the array after the kernel operation
@@ -150,6 +148,7 @@ def _get_set_indices(shape, strides, offset):
 
 
 @ft.partial(jax.profiler.annotate_function, name="general_arange")
+@ft.partial(jax.jit, static_argnums=(0, 1, 2, 3, 4))
 def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
     """Calculate the windows indices for a given dimension.
 
@@ -219,6 +218,7 @@ def general_product(*args):
     return nvmap(len(args))(*args)
 
 
+@ft.partial(jax.jit, static_argnums=(0, 1))
 def _index_from_view(
     view: tuple[jnp.ndarray, ...], kernel_size: tuple[int, ...]
 ) -> tuple[int, ...]:

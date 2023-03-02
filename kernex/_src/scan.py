@@ -13,6 +13,18 @@ from kernex._src.utils import ZIP, _offset_to_padding, ix_, roll_view
 
 @pytc.treeclass
 class baseKernelScan(kernelOperation):
+    def __init__(
+        self,
+        func_index_map: dict,
+        shape: tuple[int, ...],
+        kernel_size: tuple[int, ...],
+        strides: tuple[int, ...],
+        border: tuple[tuple[int, int], ...],
+        relative: bool = False,
+    ):
+
+        super().__init__(func_index_map, shape, kernel_size, strides, border, relative)
+
     def __post_init__(self):
         # if there is only one function, use the single call method
         # this is faster than the multi call method
@@ -68,6 +80,17 @@ class baseKernelScan(kernelOperation):
 
 @pytc.treeclass
 class kernelScan(baseKernelScan):
+    def __init__(
+        self,
+        func_index_map: dict,
+        shape: tuple[int, ...],
+        kernel_size: tuple[int, ...],
+        strides: tuple[int, ...],
+        border: tuple[tuple[int, int], ...],
+        relative: bool = False,
+    ):
+        super().__init__(func_index_map, shape, kernel_size, strides, border, relative)
+
     def __call__(self, array, *args, **kwargs):
         return self._call(array, *args, **kwargs)
 

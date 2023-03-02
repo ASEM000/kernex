@@ -14,12 +14,22 @@ from kernex._src.utils import ZIP, _key_search, general_arange, general_product
 class kernelOperation:
     """base class for all kernel operations"""
 
-    func_index_map: dict = pytc.field(callbacks=[pytc.freeze])
-    shape: tuple[int, ...] = pytc.field(callbacks=[pytc.freeze])
-    kernel_size: tuple[int, ...] = pytc.field(callbacks=[pytc.freeze])
-    strides: tuple[int, ...] = pytc.field(callbacks=[pytc.freeze])
-    border: tuple[tuple[int, int], ...] = pytc.field(callbacks=[pytc.freeze])
-    relative: bool = pytc.field(callbacks=[pytc.freeze])
+    def __init__(
+        self,
+        func_index_map: dict,
+        shape: tuple[int, ...],
+        kernel_size: tuple[int, ...],
+        strides: tuple[int, ...],
+        border: tuple[tuple[int, int], ...],
+        relative: bool = False,
+    ):
+
+        self.func_index_map = func_index_map
+        self.shape = shape
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.border = border
+        self.relative = relative
 
     @ft.cached_property
     def pad_width(self):

@@ -14,8 +14,19 @@ from kernex._src.utils import ZIP, _offset_to_padding, ix_, roll_view
 
 @pytc.treeclass
 class baseKernelMap(kernelOperation):
-    def __post_init__(self):
+    def __init__(
+        self,
+        func_index_map: dict,
+        shape: tuple[int, ...],
+        kernel_size: tuple[int, ...],
+        strides: tuple[int, ...],
+        border: tuple[tuple[int, int], ...],
+        relative: bool = False,
+    ):
 
+        super().__init__(func_index_map, shape, kernel_size, strides, border, relative)
+
+    def __post_init__(self):
         self.__call__ = (
             # if there is only one function, use the single call method
             # this is faster than the multi call method
@@ -79,6 +90,17 @@ class baseKernelMap(kernelOperation):
 class kernelMap(baseKernelMap):
     """A class for applying a function to a kernel map of an array"""
 
+    def __init__(
+        self,
+        func_index_map: dict,
+        shape: tuple[int, ...],
+        kernel_size: tuple[int, ...],
+        strides: tuple[int, ...],
+        border: tuple[tuple[int, int], ...],
+        relative: bool = False,
+    ):
+        super().__init__(func_index_map, shape, kernel_size, strides, border, relative)
+
     def __call__(self, array, *args, **kwargs):
         return self.__call__(array, *args, **kwargs)
 
@@ -119,8 +141,7 @@ class offsetKernelMap(kernelMap):
         # the result is a 1D array of the same length as the number of views
         # the result is reshaped to the output shape
         result = self.__call__(array, *args, **kwargs)
-        assert (
-            result.shape <= array.shape
-        ), f"kernel operation output must be scalar. Foud {result.shape}"
+        msg = f"kernel operation output must be scalar. Foud {result.shape}"
+        assert result.shape <= array.shape, msg
 
         return array.at[ix_(*self.set_indices)].set(result)

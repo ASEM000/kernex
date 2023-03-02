@@ -120,8 +120,8 @@ def offset_kernel_map(
     func = kernel_map(func_dict, shape, kernel_size, strides, padding, relative)
     set_indices = _get_set_indices(shape, strides, offset)
 
-    def call(array, *args, **kwargs):
-        result = func(array, *args, **kwargs)
+    def call(array, *a, **k):
+        result = func(array, *a, **k)
         if result.shape > array.shape:
             msg = f"kernel operation output must be scalar. Foud {result.shape}"
             raise ValueError(msg)

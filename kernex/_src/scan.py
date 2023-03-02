@@ -100,8 +100,8 @@ def offset_kernel_scan(
     func = kernel_scan(func_dict, shape, kernel_size, strides, padding, relative)
     set_indices = _get_set_indices(shape, strides, offset)
 
-    def call(array, *args, **kwargs):
-        result = func(array, *args, **kwargs)
+    def call(array, *a, **k):
+        result = func(array, *a, **k)
         if result.shape > array.shape:
             msg = "scan operation output must be scalar."
             raise ValueError(msg)

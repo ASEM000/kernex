@@ -11,8 +11,8 @@ from typing import Callable
 
 import jax.numpy as jnp
 
-from kernex._src.map import kernelMap, offsetKernelMap
-from kernex._src.scan import kernelScan, offsetKernelScan
+from kernex._src.map import kernel_map, offset_kernel_map
+from kernex._src.scan import kernel_scan, offset_kernel_scan
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
     _normalize_slices,
@@ -69,9 +69,9 @@ class kernelInterface:
                 self.resolved_container[func] = index
 
         kernel_op = (
-            (offsetKernelScan if self.inplace else offsetKernelMap)
+            (offset_kernel_scan if self.inplace else offset_kernel_map)
             if self.use_offset
-            else (kernelScan if self.inplace else kernelMap)
+            else (kernel_scan if self.inplace else kernel_map)
         )
 
         return kernel_op(
@@ -96,9 +96,9 @@ class kernelInterface:
             }
 
             kernel_op = (
-                (offsetKernelScan if self.inplace else offsetKernelMap)
+                (offset_kernel_scan if self.inplace else offset_kernel_map)
                 if self.use_offset
-                else (kernelScan if self.inplace else kernelMap)
+                else (kernel_scan if self.inplace else kernel_map)
             )
 
             return kernel_op(

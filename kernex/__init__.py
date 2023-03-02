@@ -1,6 +1,5 @@
-from ._src.base import kernelOperation
-from ._src.map import baseKernelMap, kernelMap, offsetKernelMap
-from ._src.scan import baseKernelScan, kernelScan, offsetKernelScan
+from ._src.map import kernel_map, offset_kernel_map
+from ._src.scan import kernel_scan, offset_kernel_scan
 from .interface.kernel_interface import kmap, kscan, smap, sscan
 
 __all__ = (
@@ -8,13 +7,10 @@ __all__ = (
     "kscan",
     "smap",
     "sscan",
-    "kernelOperation",
-    "baseKernelMap",
-    "kernelMap",
-    "offsetKernelMap",
-    "baseKernelScan",
-    "kernelScan",
-    "offsetKernelScan",
+    "kernel_map",
+    "offset_kernel_map",
+    "kernel_scan",
+    "offset_kernel_scan",
 )
 
-__version__ = "0.1.2"
+__version__ = "0.2.0b"

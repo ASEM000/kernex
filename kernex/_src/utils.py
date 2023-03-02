@@ -1,6 +1,5 @@
-"""
-[credits] Mahmoud Asem@CVBML KAIST May 2022
-"""
+# [credits] Mahmoud Asem@CVBML KAIST May 2022
+
 
 from __future__ import annotations
 
@@ -273,6 +272,7 @@ def _compare_key(x: tuple[jnp.ndarray, ...], y: tuple[jnp.ndarray, ...]) -> bool
     return jnp.all(jnp.array([_compare_key_item(xi, yi) for (xi, yi) in zip(x, y)]))
 
 
+@jax.jit
 def _key_search(key: tuple[jnp.ndarray, ...], keys: tuple[jnp.ndarray]) -> int:
     """returns the index of the key in the keys array if key is within the key range or equal to it.
 

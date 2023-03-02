@@ -1,3 +1,5 @@
+# [credits] Mahmoud Asem@CVBML KAIST May 2022
+
 from __future__ import annotations
 
 import functools as ft
@@ -100,7 +102,9 @@ def offset_kernel_scan(
 
     def call(array, *args, **kwargs):
         result = func(array, *args, **kwargs)
-        msg = "scan operation output must be scalar."
+        if result.shape > array.shape:
+            msg = "scan operation output must be scalar."
+            raise ValueError(msg)
         assert result.shape <= array.shape, msg
         return array.at[ix_(*set_indices)].set(result)
 

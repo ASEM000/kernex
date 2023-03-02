@@ -1,3 +1,5 @@
+# [credits] Mahmoud Asem@CVBML KAIST May 2022
+
 from __future__ import annotations
 
 import functools as ft
@@ -120,8 +122,9 @@ def offset_kernel_map(
 
     def call(array, *args, **kwargs):
         result = func(array, *args, **kwargs)
-        msg = f"kernel operation output must be scalar. Foud {result.shape}"
-        assert result.shape <= array.shape, msg
+        if result.shape > array.shape:
+            msg = f"kernel operation output must be scalar. Foud {result.shape}"
+            raise ValueError(msg)
         return array.at[ix_(*set_indices)].set(result)
 
     return call

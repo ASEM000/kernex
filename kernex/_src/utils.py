@@ -150,7 +150,6 @@ def _get_set_indices(shape, strides, offset):
 
 
 @ft.partial(jax.profiler.annotate_function, name="general_arange")
-@ft.lru_cache(maxsize=None)
 def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jnp.ndarray:
     """Calculate the windows indices for a given dimension.
 

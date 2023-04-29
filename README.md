@@ -450,6 +450,55 @@ def avgpool_2d(x):
 
 
 
+<details><summary>8️⃣ Euelr integration</summary>
+
+```python
+
+# euler method for integrating ODEs
+
+import jax
+import jax.numpy as jnp
+import matplotlib.pyplot as plt
+
+import kernex as kex
+
+# yn = yn-1 + h*dydx(yn-1)
+# i.e. dydx=y, y(0)=1, where the exact solution is y=e^x
+
+x = jnp.linspace(0, 1, 100)
+dx = x[1] - x[0]
+dydx = lambda x: x
+
+
+def ic(_):
+    return 1.0
+
+
+def kernel(x: jax.Array) -> jax.Array:
+    return x[-1] + dx * dydx(x[-1])
+
+
+F = kex.kscan(
+    kernel_size=(3,),  # the window size for the kernel, prefer odd numbers
+    relative=True,  # whether to use relative or absolute indexing for the kernel
+    padding=((1, 1),),  # use padding to return the same shape as the input
+)
+F[0] = ic
+F[1:] = kernel
+# compile the function call
+F = jax.jit(F.__call__)
+
+y = F(x)
+
+plt.scatter(x, y, label="numerical")
+plt.scatter(x, jnp.exp(x), label="exact")
+plt.legend()
+```
+
+![img](assets/euler.svg)
+
+</details>
+
 ## ⌛ Benchmarking<a id="Benchmarking"></a>
 
 <details><summary>Conv2D</summary>

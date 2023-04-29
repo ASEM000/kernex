@@ -450,52 +450,62 @@ def avgpool_2d(x):
 
 
 
-<details><summary>8️⃣ Euelr integration</summary>
+<details><summary>8️⃣ Runge-Kutta integration</summary>
 
 ```python
 
-# euler method for integrating ODEs
-
-import jax
-import jax.numpy as jnp
+# lets solve dydt = y, where y0 = 1 and y(t)=e^t
+# using Runge-Kutta 4th order method
+# f(t,y) = y
+import jax.numpy as jnp 
 import matplotlib.pyplot as plt
-
 import kernex as kex
 
-# yn = yn-1 + h*dydx(yn-1)
-# i.e. dydx=y, y(0)=1, where the exact solution is y=e^x
 
-x = jnp.linspace(0, 1, 100)
-dx = x[1] - x[0]
-dydx = lambda x: x
-
-
-def ic(_):
-    return 1.0
+t = jnp.linspace(0, 1, 5)
+y = jnp.zeros(5)
+x = jnp.stack([y, t], axis=0)
+dt = t[1] - t[0]  # 0.1
+f = lambda tn, yn: yn
 
 
-def kernel(x: jax.Array) -> jax.Array:
-    return x[-1] + dx * dydx(x[-1])
+def ic(x):
+    """ initial condition y0 = 1 """
+    return 1.
 
 
-F = kex.kscan(
-    kernel_size=(3,),  # the window size for the kernel, prefer odd numbers
-    relative=True,  # whether to use relative or absolute indexing for the kernel
-    padding=((1, 1),),  # use padding to return the same shape as the input
-)
-F[0] = ic
-F[1:] = kernel
-# compile the function call
-F = jax.jit(F.__call__)
+def rk4(x):
+    """ runge kutta 4th order integration step """
+    # ┌────┬────┬────┐      ┌──────┬──────┬──────┐
+    # │ y0 │*y1*│ y2 │      │[0,-1]│[0, 0]│[0, 1]│
+    # ├────┼────┼────┤ ==>  ├──────┼──────┼──────┤
+    # │ t0 │ t1 │ t2 │      │[1,-1]│[1, 0]│[1, 1]│
+    # └────┴────┴────┘      └──────┴──────┴──────┘
+    t0 = x[1, -1]
+    y0 = x[0, -1]
+    k1 = dt * f(t0, y0)
+    k2 = dt * f(t0 + dt / 2, y0 + 1 / 2 * k1)
+    k3 = dt * f(t0 + dt / 2, y0 + 1 / 2 * k2)
+    k4 = dt * f(t0 + dt, y0 + k3)
+    yn_1 = y0 + 1 / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+    return yn_1
 
-y = F(x)
 
-plt.scatter(x, y, label="numerical")
-plt.scatter(x, jnp.exp(x), label="exact")
+F = kex.kscan(kernel_size=(2, 3), relative=True, padding=((0, 1)))  # kernel size = 3
+
+F[0:1, 1:] = rk4
+F[0, 0] = ic
+# compile the solver
+solver = jax.jit(F.__call__)
+y = solver(x)[0, :]
+
+plt.plot(t, y, '-o', label='rk4')
+plt.plot(t, jnp.exp(t), '-o', label='analytical')
 plt.legend()
+
 ```
 
-![img](assets/euler.svg)
+![img](assets/rk4.svg)
 
 </details>
 

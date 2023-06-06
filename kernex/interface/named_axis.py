@@ -1,18 +1,28 @@
-"""
-[credits] Mahmoud Asem@CVBML KAIST May 2022
-"""
+# Copyright 2023 Kernex authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from __future__ import annotations
 
 import copy
-import functools
+import functools as ft
 from itertools import product
 from typing import Callable
 
-import jax.numpy as jnp
+import jax
 
 
-class sortedDict(dict):
+class SortedDict(dict):
     """a class that sort a key before setting or getting an item"""
 
     # this dict is used to store the kernel values
@@ -24,13 +34,15 @@ class sortedDict(dict):
         key = (key,) if isinstance(key, str) else tuple(sorted(key))
         return super().__getitem__(key)
 
-    def __setitem__(self, key: tuple[str, ...], val: jnp.ndarray):
+    def __setitem__(self, key: tuple[str, ...], val: jax.Array):
         key = (key,) if isinstance(key, str) else tuple(sorted(key))
         super().__setitem__(key, val)
 
 
 def generate_named_axis(
-    kernel_size: tuple[int, ...], named_axis: dict[int, str], relative: bool = True
+    kernel_size: tuple[int, ...],
+    named_axis: dict[int, str],
+    relative: bool = True,
 ) -> dict[str, tuple[int, ...]]:
     """Return a dict that maps named axis to their integer value indices
 
@@ -45,7 +57,7 @@ def generate_named_axis(
     Returns:
         dict[str, tuple[int, ...]]:
             [1] fully named axes (len(keys)==len(kernel_size ))
-            return sortedDict object , where keys order is insignificant ( A['a','b']==A['b','a'])
+            return SortedDict object , where keys order is insignificant ( A['a','b']==A['b','a'])
 
             [2] partially named axes (len(keys)<len(kernel_size s))
             return dictionary object where key order matters.
@@ -133,7 +145,7 @@ def generate_named_axis(
     keys = product(*keys)
 
     # reserve order if the named_axis are partially passed , otherwise its not order
-    return_dict = dict() if partial_naming else sortedDict()
+    return_dict = dict() if partial_naming else SortedDict()
 
     # multiply [-m,...,m ] x [-n,...n] = [(-m,n) (-m,n-1) , .. ] to get the mesh integer indices
     vals = product(*vals)
@@ -151,8 +163,8 @@ def named_axis_wrapper(kernel_size, named_axis):
     x = copy.copy(named_axis_dict)
 
     def call(func: Callable):
-        @functools.wraps(func)
-        def inner(X: jnp.ndarray, *args, **kwargs):
+        @ft.wraps(func)
+        def inner(X: jax.Array, *args, **kwargs):
             # switch the input of the function to operate on dictionary
             for k, idx in named_axis_dict.items():
                 # assign the literal character keys to array numeric values

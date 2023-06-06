@@ -1,14 +1,25 @@
+# Copyright 2023 Kernex authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import annotations
 
 import functools as ft
 from typing import Any, Callable
 
-import jax.numpy as jnp
+import jax
 import jax.tree_util as jtu
-
-from kernex._src.utils import ZIP
-
-# ---------------------- resolve_arguments ------------------------ #
+from jax.util import safe_zip
 
 
 def _resolve_padding_argument(
@@ -143,8 +154,8 @@ def _resolve_index(index, shape):
 
 
 def _normalize_slices(
-    container: dict[Callable, jnp.ndarray], in_dim: tuple[int, ...]
-) -> dict[Callable, jnp.ndarray]:
+    container: dict[Callable, jax.Array], in_dim: tuple[int, ...]
+) -> dict[Callable, jax.Array]:
     """Convert slice with partial range to tuple with determined range"""
 
     for func, slices in container.items():
@@ -171,7 +182,7 @@ def _resolve_kernel_size(arg, in_dim):
         msg += f"Found {kw}  = {arg } array shape = {in_dim} "
         assert all(ai <= si for (ai, si) in zip(arg, in_dim)), msg
 
-        return tuple(si if wi == -1 else wi for si, wi in ZIP(in_dim, arg))
+        return tuple(si if wi == -1 else wi for si, wi in safe_zip(in_dim, arg))
 
     if isinstance(arg, int):
         return (in_dim if arg == -1 else arg) * len(in_dim)

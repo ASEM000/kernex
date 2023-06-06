@@ -1,8 +1,20 @@
-# [credits] Mahmoud Asem@CVBML KAIST May 2022
-
+# Copyright 2023 Kernex authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import annotations
 
 import functools as ft
+from typing import Callable
 
 import jax
 import jax.numpy as jnp
@@ -22,15 +34,17 @@ from kernex._src.utils import (
 
 
 @ft.lru_cache(maxsize=None)
-def _transform_map_func(func, relative: bool):
+def _transform_map_func(func: Callable, relative: bool) -> Callable:
+    # transform a function that takes array to
+    # a function that takes a view and an array
     def relative_wrapper(*a, **k):
-        def map_func(view, array):
+        def map_func(view: jax.Array, array: jax.Array):
             return func(roll_view(array[ix_(*view)]), *a, **k)
 
         return map_func
 
     def absolute_wrapper(*a, **k):
-        def map_func(view, array):
+        def map_func(view: jax.Array, array: jax.Array):
             return func(array[ix_(*view)], *a, **k)
 
         return map_func
@@ -39,19 +53,19 @@ def _transform_map_func(func, relative: bool):
 
 
 def kernel_map(
-    func_index_map: dict,
+    func_map: dict,
     shape: tuple[int, ...],
     kernel_size: tuple[int, ...],
     strides: tuple[int, ...],
     border: tuple[tuple[int, int], ...],
     relative: bool = False,
 ):
-    def single_call_wrapper(array, *a, **k):
+    def single_call_wrapper(array: jax.Array, *a, **k):
         padded_array = jnp.pad(array, _calculate_pad_width(border))
 
         # convert the function to a callable that takes a view and an array
         # and returns the result of the function applied to the view
-        func0 = next(iter(func_index_map))
+        func0 = next(iter(func_map))
         reduced_func = _transform_map_func(func0, relative)(*a, **k)
 
         # apply the function to each view using vmap
@@ -71,7 +85,7 @@ def kernel_map(
 
         return result.reshape(*output_shape, *result.shape[1:])
 
-    def multi_call_wrapper(array, *a, **k):
+    def multi_call_wrapper(array: jax.Array, *a, **k):
 
         padded_array = jnp.pad(array, _calculate_pad_width(border))
         # convert the functions to a callable that takes a view and an array
@@ -79,7 +93,7 @@ def kernel_map(
         # the result is a 1D array of the same length as the number of views
         reduced_funcs = tuple(
             _transform_map_func(func, relative)(*a, **k)
-            for func in tuple(func_index_map.keys())[::-1]
+            for func in tuple(func_map.keys())[::-1]
         )
 
         # apply the functions to each view using vmap
@@ -90,7 +104,7 @@ def kernel_map(
 
         args = (shape, kernel_size, strides, border)
         views = _generate_views(*args)
-        slices = tuple(func_index_map.values())
+        slices = tuple(func_map.values())
 
         def map_func(view):
             index_ = _get_index_from_view(view, kernel_size)
@@ -104,11 +118,11 @@ def kernel_map(
 
         return result.reshape(*output_shape, *func_shape)
 
-    return single_call_wrapper if len(func_index_map) == 1 else multi_call_wrapper
+    return single_call_wrapper if len(func_map) == 1 else multi_call_wrapper
 
 
 def offset_kernel_map(
-    func_dict: dict,
+    func_map: dict,
     shape: tuple[int, ...],
     kernel_size: tuple[int, ...],
     strides: tuple[int, ...],
@@ -117,14 +131,13 @@ def offset_kernel_map(
 ):
     offset = tuple(offset)
     padding = _offset_to_padding(offset, kernel_size)
-    func = kernel_map(func_dict, shape, kernel_size, strides, padding, relative)
+    func = kernel_map(func_map, shape, kernel_size, strides, padding, relative)
     set_indices = _get_set_indices(shape, strides, offset)
 
-    def call(array, *a, **k):
+    def call(array: jax.Array, *a, **k):
         result = func(array, *a, **k)
         if result.shape > array.shape:
-            msg = f"kernel operation output must be scalar. Foud {result.shape}"
-            raise ValueError(msg)
+            raise ValueError(f"Output must be scalar. Foud {result.shape=}")
         return array.at[ix_(*set_indices)].set(result)
 
     return call

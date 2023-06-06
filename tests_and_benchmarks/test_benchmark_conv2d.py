@@ -14,8 +14,7 @@ mat = lambda *args: jnp.arange(1, reduce(lambda x, y: x * y, args) + 1).reshape(
 
 def test_and_time_conv2d():
 
-    print()
-    print("backend name = ", jax.devices())
+    print("\nbackend name = ", jax.devices())
 
     iters = 50
 
@@ -24,8 +23,6 @@ def test_and_time_conv2d():
     )
 
     for C, H in dims:
-
-        print()
 
         @jax.jit
         def jax_conv2d(x, w):
@@ -61,7 +58,7 @@ def test_and_time_conv2d():
             t2 = time.time()
             times += [(t2 - t1)]
 
-        print(f"[benchmarking]:\tconv2d @ dim={(C,H,H)}")
+        print(f"\n[benchmarking]:\tconv2d @ dim={(C,H,H)}")
         print("=" * 50)
 
         print(

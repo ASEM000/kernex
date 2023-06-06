@@ -56,7 +56,6 @@ def _get_index_from_view(
     )
 
 
-@ft.partial(jax.jit, static_argnums=(0, 1, 2, 3))
 def _generate_views(
     shape: tuple[int, ...],
     kernel_size: tuple[int, ...],
@@ -129,7 +128,6 @@ def _offset_to_padding(input_argument, kernel_size: tuple[int, ...]):
     return tuple(padding)
 
 
-@ft.partial(jax.jit, static_argnums=(1, 2))
 def roll(a: jax.Array, shift: Sequence[int], axis: Sequence[int]) -> jax.Array:
     # https://github.com/jakevdp/jax/blob/5497bb03b6c353853b2ef6536e954898214736c8/jax/_src/numpy/lax_numpy.py
     for ax, s in zip(*np.broadcast_arrays(axis, shift)):
@@ -146,7 +144,6 @@ def roll(a: jax.Array, shift: Sequence[int], axis: Sequence[int]) -> jax.Array:
     return a
 
 
-@jax.jit
 @ft.partial(jax.profiler.annotate_function, name="roll_view")
 def roll_view(array: jax.Array) -> jax.Array:
     """Roll view along all axes
@@ -189,7 +186,6 @@ def _get_set_indices(shape, strides, offset):
     )
 
 
-@ft.partial(jax.jit, static_argnums=(0, 1, 2, 3, 4))
 @ft.partial(jax.profiler.annotate_function, name="general_arange")
 def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jax.Array:
     """Calculate the windows indices for a given dimension.
@@ -230,7 +226,6 @@ def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jax.Array:
     return (res) if si == 1 else (res)[::si]
 
 
-@jax.jit
 @ft.partial(jax.profiler.annotate_function, name="general_product")
 def general_product(*args: jax.Array):
     """Equivalent to tuple(zip(*itertools.product(*args)))` for arrays

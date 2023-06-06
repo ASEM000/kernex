@@ -60,8 +60,19 @@ def kernel_map(
     border: tuple[tuple[int, int], ...],
     relative: bool = False,
 ):
+
+    pad_width = _calculate_pad_width(border)
+    args = (shape, kernel_size, strides, border)
+    views = _generate_views(*args)
+    # reshape the result to the output shape
+    # for example if the input shape is (3, 3) and the kernel shape is (2, 2)
+    # and the stride is 1 , and the padding is 0, the output shape is (2, 2)
+    output_shape = _calculate_output_shape(*args)
+
+    slices = tuple(func_map.values())
+
     def single_call_wrapper(array: jax.Array, *a, **k):
-        padded_array = jnp.pad(array, _calculate_pad_width(border))
+        padded_array = jnp.pad(array, pad_width)
 
         # convert the function to a callable that takes a view and an array
         # and returns the result of the function applied to the view
@@ -70,24 +81,14 @@ def kernel_map(
 
         # apply the function to each view using vmap
         # the result is a 1D array of the same length as the number of views
-        args = (shape, kernel_size, strides, border)
-        views = _generate_views(*args)
-
         def map_func(view):
             return reduced_func(view, padded_array)
 
         result = jax.vmap(map_func)(views)
-
-        # reshape the result to the output shape
-        # for example if the input shape is (3, 3) and the kernel shape is (2, 2)
-        # and the stride is 1 , and the padding is 0, the output shape is (2, 2)
-        output_shape = _calculate_output_shape(*args)
-
         return result.reshape(*output_shape, *result.shape[1:])
 
     def multi_call_wrapper(array: jax.Array, *a, **k):
-
-        padded_array = jnp.pad(array, _calculate_pad_width(border))
+        padded_array = jnp.pad(array, pad_width)
         # convert the functions to a callable that takes a view and an array
         # and returns the result of the function applied to the view
         # the result is a 1D array of the same length as the number of views
@@ -101,21 +102,13 @@ def kernel_map(
         # here, lax.switch is used to apply the functions in order
         # the first function is applied to the first view, the second function
         # is applied to the second view, and so on
-
-        args = (shape, kernel_size, strides, border)
-        views = _generate_views(*args)
-        slices = tuple(func_map.values())
-
         def map_func(view):
             index_ = _get_index_from_view(view, kernel_size)
             func_index = _key_search(key=tuple(index_), keys=slices)
             return lax.switch(func_index, reduced_funcs, view, padded_array)
 
         result = jax.vmap(map_func)(views)
-
         func_shape = result.shape[1:]
-        output_shape = _calculate_output_shape(*args)
-
         return result.reshape(*output_shape, *func_shape)
 
     return single_call_wrapper if len(func_map) == 1 else multi_call_wrapper

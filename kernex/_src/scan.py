@@ -64,8 +64,15 @@ def kernel_scan(
     border: tuple[tuple[int, int], ...],
     relative: bool = False,
 ):
+
+    pad_width = _calculate_pad_width(border)
+    args = (shape, kernel_size, strides, border)
+    views = _generate_views(*args)
+    output_shape = _calculate_output_shape(*args)
+    slices = tuple(func_map.values())
+
     def single_call_wrapper(array: jax.Array, *a, **k):
-        padded_array = jnp.pad(array, _calculate_pad_width(border))
+        padded_array = jnp.pad(array, pad_width)
         func0 = next(iter(func_map))
         reduced_func = _transform_scan_func(func0, kernel_size, relative)(*a, **k)
 
@@ -74,20 +81,15 @@ def kernel_scan(
             index = _get_index_from_view(view, kernel_size)
             return result, result[index]
 
-        args = (shape, kernel_size, strides, border)
-        views = _generate_views(*args)
-        output_shape = _calculate_output_shape(*args)
         return lax.scan(scan_body, padded_array, views)[1].reshape(output_shape)
 
     def multi_call_wrapper(array: jax.Array, *a, **k):
-        padded_array = jnp.pad(array, _calculate_pad_width(border))
+        padded_array = jnp.pad(array, pad_width)
 
         reduced_funcs = tuple(
             _transform_scan_func(func, kernel_size, relative)(*a, **k)
             for func in tuple(func_map.keys())[::-1]
         )
-
-        slices = tuple(func_map.values())
 
         def scan_body(padded_array, view):
             index = _get_index_from_view(view, kernel_size)
@@ -96,9 +98,6 @@ def kernel_scan(
             result = result.reshape(padded_array.shape)
             return result, result[index]
 
-        args = (shape, kernel_size, strides, border)
-        views = _generate_views(*args)
-        output_shape = _calculate_output_shape(*args)
         return lax.scan(scan_body, padded_array, views)[1].reshape(output_shape)
 
     return single_call_wrapper if len(func_map) == 1 else multi_call_wrapper

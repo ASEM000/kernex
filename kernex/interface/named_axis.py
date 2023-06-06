@@ -92,7 +92,8 @@ def generate_named_axis(
             ('b+2', 1)  : (2, 1),
             ('b+2', 2)  : (2, 2)}
     """
-    # helper function to return range of sliding kernel_size  for a given dimension
+    # helper function to return range of sliding kernel_size  
+    # for a given dimension
     def range_func(wi):
         if relative:
             return tuple(range(-((wi - 1) // 2), (wi) // 2 + 1))
@@ -120,7 +121,8 @@ def generate_named_axis(
     # iterate over key,val in named_axis dict
     for dim, val in default_named_axis.items():
         if isinstance(val, str):
-            # get keys for each dimension : [ ['i-m' ,..,'i+m'] , ['j-n',...,'j+n'] , .. ]
+            # get keys for each dimension : [ ['i-m' ,..,'i+m'] , 
+            # ['j-n',...,'j+n'] , .. ]
             # single charater case for each dimensoon
             # example {0:'i'}
             # index is incremented and decremented
@@ -147,7 +149,8 @@ def generate_named_axis(
     # reserve order if the named_axis are partially passed , otherwise its not order
     return_dict = dict() if partial_naming else SortedDict()
 
-    # multiply [-m,...,m ] x [-n,...n] = [(-m,n) (-m,n-1) , .. ] to get the mesh integer indices
+    # multiply [-m,...,m ] x [-n,...n] = [(-m,n) (-m,n-1) , .. ] to get 
+    # the mesh integer indices
     vals = product(*vals)
 
     for k, v in zip(keys, vals):

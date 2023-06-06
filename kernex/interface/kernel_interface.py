@@ -105,7 +105,7 @@ class KernelInterface:
             else:
                 self.resolved_container[func] = index
 
-        kernel_op = (
+        kernel_op = jtu.Partial(
             (offset_kernel_scan if self.inplace else offset_kernel_map)
             if self.use_offset
             else (kernel_scan if self.inplace else kernel_map)
@@ -223,6 +223,9 @@ class kscan(KernelInterface):
             relative: if True, the kernel is relative to the current index.
             named_axis: optional dictionary of named axis to be used in the
                 kernel function instead of the default integer indexing.
+                for example: {0: 'i', 1: 'j'}, then
+                this notation can be used in the kernel function e.g.:
+                `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
 
         Returns:
             A function that takes an array as input and returns the result of
@@ -239,10 +242,11 @@ class kscan(KernelInterface):
             [ 6 13 22]
 
         Note:
-        The previous example is equivalent to the following:
-        v1 := [1,2,3] -> sum(v1) = 6
-        v2 := [6,3,4] -> sum(v2) = 13
-        v3 := [13,4,5] -> sum(v3) = 22
+            The previous example is equivalent to the following:
+            v1 := [1,2,3] -> sum(v1) = 6
+            v2 := [6,3,4] -> sum(v2) = 13
+            v3 := [13,4,5] -> sum(v3) = 22
+            Where vi is the ith view of the input array.
         """
         super().__init__(
             kernel_size=kernel_size,
@@ -271,13 +275,17 @@ class kmap(KernelInterface):
             strides: strides of the kernel, int or tuple of ints.
             padding: padding of the kernel, int or tuple of ints.
             relative: if True, the kernel is relative to the current index.
-            named_axis: optional dictionary of named axis to be used instead
-                of integers inside the kernel function.
+            named_axis: optional dictionary of named axis to be used in the
+                kernel function instead of the default integer indexing.
+                for example: {0: 'i', 1: 'j'}, then
+                this notation can be used in the kernel function e.g.:
+                `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
 
         Returns:
             A function that takes an array as input and applies the kernel
 
         Example:
+            >>> # as a function decorator
             >>> import kernex as kex
             >>> import jax.numpy as jnp
             >>> @kex.kmap(kernel_size=(3,))
@@ -292,6 +300,7 @@ class kmap(KernelInterface):
             v1 := [1,2,3] -> sum(v1) = 6
             v2 := [2,3,4] -> sum(v2) = 9
             v3 := [3,4,5] -> sum(v3) = 12
+            Where vi is the ith view of the input array.
         """
         super().__init__(
             kernel_size=kernel_size,

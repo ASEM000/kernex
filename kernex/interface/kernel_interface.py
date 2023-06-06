@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import functools as ft
-from typing import Callable, Literal, Union
+from typing import Callable, Literal, Tuple, Union
 
 import jax
 
@@ -31,15 +31,15 @@ from kernex.interface.resolve_utils import (
 )
 
 BorderType = Union[
-    tuple[int, ...],
-    tuple[tuple[int, int], ...],
+    Tuple[int, ...],
+    Tuple[Tuple[int, int], ...],
     int,
     Literal["valid", "same", "SAME", "VALID"],
 ]
 
-StridesType = Union[tuple[int, ...], int]
-OffsetType = Union[tuple[int, ...], int]
-KernelSizeType = tuple[int, ...]
+StridesType = Union[Tuple[int, ...], int]
+OffsetType = Union[Tuple[int, ...], int]
+KernelSizeType = Tuple[int, ...]
 
 
 class KernelInterface:

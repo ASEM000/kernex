@@ -18,6 +18,7 @@ import functools as ft
 from typing import Callable, Literal, Tuple, Union
 
 import jax
+import jax.tree_util as jtu
 
 from kernex._src.map import kernel_map, offset_kernel_map
 from kernex._src.scan import kernel_scan, offset_kernel_scan
@@ -132,7 +133,7 @@ class KernelInterface:
                 else func: ()
             }
 
-            kernel_op = (
+            kernel_op = jtu.Partial(
                 (offset_kernel_scan if self.inplace else offset_kernel_map)
                 if self.use_offset
                 else (kernel_scan if self.inplace else kernel_map)

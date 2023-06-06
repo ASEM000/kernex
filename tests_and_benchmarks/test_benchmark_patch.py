@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from functools import reduce
 from statistics import mean, stdev
@@ -12,18 +14,13 @@ mat = lambda *args: jnp.arange(1, reduce(lambda x, y: x * y, args) + 1).reshape(
 
 
 def test_and_time_patch():
-
-    print()
-    print("backend name = ", jax.devices())
+    print("\nbackend name = ", jax.devices())
 
     iters = 1_000
 
     dims = [10, 100, 1_000, 10_000, 100_000, 1_000_000]
 
     for dim in dims:
-
-
-        print()
 
         @jax.jit
         @kex.kmap(kernel_size=(3,), padding="same", relative=False)
@@ -44,7 +41,7 @@ def test_and_time_patch():
             t2 = time.time()
             times += [(t2 - t1)]
 
-        print(f"[benchmarking]:\tget_patch @ dim={dim:,}")
+        print(f"\n[benchmarking]:\tget_patch @ dim={dim:,}")
         print("=" * 50)
 
         print(

@@ -44,6 +44,7 @@ The prime motivation for this package is to blend the solution process of PDEs i
 <td>
 
 ```python
+
 import kernex as kex 
 import jax.numpy as jnp 
 
@@ -101,6 +102,7 @@ To achieve the following operation with `jax.lax.switch` , we need a list of 10 
 For this reason , kernex adopts a modified version of `jax.lax.switch` to reduce the number of branches required.
 
 ```python
+
 # function applies x^2 at boundaries, and applies x^3 to to the interior
 
         ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
@@ -160,6 +162,7 @@ print(jax.grad(lambda x:jnp.sum(F(x)))(array))
 <td>
 
 ```python
+
 def F(x):
     f1 = lambda x:x**2
     f2 = lambda x:x**3
@@ -195,6 +198,7 @@ See Linear convection in **More examples** section
 <summary>1️⃣ Convolution operation</summary>
 
 ```python
+
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -247,6 +251,7 @@ DeviceArray(
 <details><summary>3️⃣ Get Patches of an array</summary>
 
 ```python
+
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -404,6 +409,7 @@ def gaussian_blur(image, sigma, kernel_size):
 <details > <summary>6️⃣ Depthwise convolution </summary>
      
 ```python     
+
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -514,6 +520,7 @@ plt.legend()
 <details><summary>Conv2D</summary>
 
 ```python
+
 # testing and benchmarking convolution
 # for complete benchmarking check /tests_and_benchmark
 
@@ -553,6 +560,7 @@ np.testing.assert_allclose(kernex_conv2d(x,w),jax_conv2d(xx,ww),atol=1e-3)
 <details><summary>get_patches</summary>
 
 ```python
+
 # benchmarking `get_patches` with `jax.lax.conv_general_dilated_patches`
 # On Mac M1 CPU
 

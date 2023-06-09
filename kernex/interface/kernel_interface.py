@@ -32,9 +32,9 @@ from kernex.interface.resolve_utils import (
 )
 
 BorderType = Union[
+    int,
     Tuple[int, ...],
     Tuple[Tuple[int, int], ...],
-    int,
     Literal["valid", "same", "SAME", "VALID"],
 ]
 
@@ -173,7 +173,60 @@ class sscan(KernelInterface):
         relative: bool = False,
         named_axis: dict[int, str] | None = None,
     ):
+        """Applies a *scalar* function to a sliding window using `jax.lax.scan`.
 
+        Args:
+            kernel_size: size of the kernel must be a tuple of integers.
+            strides: strides of the kernel, int or tuple of ints.
+            offset: where to start the function application. for example, for 1d
+                array input `offset=((1,1),)` the function application will start
+                from the second row and first column of the input array and end
+                at the n-1 row of the input array.
+            relative: if True, the kernel is relative to the current index.
+                for example, an array = [1, 2, 3, 4, 5] with kernel_size = 3 and
+                relative = True f= lambda x: x[0] will be [1,2,3]=>[2],
+                [2,3,4]=>[3], [3,4,5]=>[4]. if relative = False, the same array will
+                be [1,2,3]=>[1], [2,3,4]=>[2], [3,4,5]=>[3].
+            named_axis: optional dictionary of named axis to be used in the
+                kernel function instead of the default integer indexing.
+                for example: {0: 'i', 1: 'j'}, then
+                this notation can be used in the kernel function e.g.:
+                `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
+
+        Example:
+            >>> import jax
+            >>> import kernex as kex
+            >>> @kex.sscan(
+            ...    # view shape
+            ...    kernel_size=(3,),
+            ...    # indexing is relative: x[0,0] points to
+            ...    # array view center and not top left corner
+            ...    relative=True,
+            ...    # start the application of the function
+            ...    # from the third column till the end (i.e. no offset at the end)
+            ...    offset=((2,0),),
+            ... )
+            ... def F(x):
+            ...    return x[-1] + x[0] + x[1]
+            >>> x = jax.numpy.arange(1,6)
+            >>> print(x)
+            [1 2 3 4 5]
+            >>> print(F(x))
+            [ 1  2  9 18 23]
+
+        Note:
+            - This transformation is always applying within the bounds of the
+                of the array. and shape of the output is the same as the input.
+            - The previous example can be decomposed into the following steps:
+
+            # view shape       # process
+            v1:=[0,1,2]        skip as offset is 2
+            v2:=[1,2,3]        skip as offset is 2
+            v3:=[2,3,4]        F(v3) = 2+3+4 = 9
+            v4:=[9,4,5]        F(v4) = 9+4+5 = 18
+            v5:=[18,5,0]       F(v5) = 18+5+0 = 23
+
+        """
         super().__init__(
             kernel_size=kernel_size,
             strides=strides,
@@ -194,6 +247,62 @@ class smap(KernelInterface):
         relative: bool = False,
         named_axis: dict[int, str] = None,
     ):
+        """Applies a *scalar* function to a sliding window using `jax.vmap`.
+
+        Args:
+            kernel_size: size of the kernel must be a tuple of integers.
+            strides: strides of the kernel, int or tuple of ints.
+            offset: where to start the function application. for example, for 1d
+                array input `offset=((1,1),)` the function application will start
+                from the second row and first column of the input array and end
+                at the n-1 row of the input array.
+            relative: if True, the kernel is relative to the current index.
+                for example, an array = [1, 2, 3, 4, 5] with kernel_size = 3 and
+                relative = True f= lambda x: x[0] will be [1,2,3]=>[2],
+                [2,3,4]=>[3], [3,4,5]=>[4]. if relative = False, the same array will
+                be [1,2,3]=>[1], [2,3,4]=>[2], [3,4,5]=>[3].
+            named_axis: optional dictionary of named axis to be used in the
+                kernel function instead of the default integer indexing.
+                for example: {0: 'i', 1: 'j'}, then
+                this notation can be used in the kernel function e.g.:
+                `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
+
+        Example:
+            >>> import jax
+            >>> import kernex as kex
+            >>> @kex.smap(
+            ...    # view shape
+            ...    kernel_size=(2,),
+            ...    # indexing is relative: x[0,0] points to
+            ...    # array view center and not top left corner
+            ...    relative=True,
+            ...    # start the application of the function
+            ...    # from the third column till the end (i.e. no offset at the end)
+            ...    offset=((2,0),),
+            ... )
+            ... def F(x):
+            ...    return x[0] + x[1]
+            >>> x = jax.numpy.arange(1,6)
+            >>> print(x)
+            [1 2 3 4 5]
+            >>> print(F(x))
+            [1 2 7 9 5]
+
+        Note:
+            - Unlike `kmap` this transformation expects a scalar function output.
+                additionally, it is always applying within the bounds of the
+                input array, i.e. shape of the output is the same as the input.
+            - The previous example can be decomposed into the following steps:
+            # view shape       # process
+            v1:=[1,2]          skip as offset is 2
+            v2:=[2,3]          skip as offset is 2
+            v3:=[3,4]          apply F(v3) = 3+4 = 7
+            v4:=[4,5]          apply F(v4) = 4+5 = 9
+            v5:=[5,0]          apply F(v5) = 5+0 = 5
+            ==================================================
+            output:            [1,2,7,9,5]
+        """
+
         super().__init__(
             kernel_size=kernel_size,
             strides=strides,
@@ -231,7 +340,7 @@ class kscan(KernelInterface):
             A function that takes an array as input and returns the result of
             the kernel function applied to the array.
 
-        Examples:
+        Example:
             >>> import kernex as kex
             >>> import jax.numpy as jnp
             >>> @kex.kscan(kernel_size=(3,))
@@ -242,7 +351,7 @@ class kscan(KernelInterface):
             [ 6 13 22]
 
         Note:
-            The previous example is equivalent to the following:
+            - The previous example is equivalent to the following:
             v1 := [1,2,3] -> sum(v1) = 6
             v2 := [6,3,4] -> sum(v2) = 13
             v3 := [13,4,5] -> sum(v3) = 22

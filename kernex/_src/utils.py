@@ -56,6 +56,7 @@ def _get_index_from_view(
     )
 
 
+@ft.lru_cache(maxsize=128)
 def _generate_views(
     shape: tuple[int, ...],
     kernel_size: tuple[int, ...],
@@ -97,6 +98,7 @@ def _calculate_output_shape(
     )
 
 
+@ft.lru_cache(maxsize=128)
 def _offset_to_padding(input_argument, kernel_size: tuple[int, ...]):
     """convert offset argument to negative border values"""
     # for example for a kernel_size = (3,3) and offset = (1,1)
@@ -226,6 +228,20 @@ def general_arange(di: int, ki: int, si: int, x0: int, xf: int) -> jax.Array:
     return (res) if si == 1 else (res)[::si]
 
 
+@ft.lru_cache(maxsize=128)
+def recursive_vmap(*, ndim: int):
+    def nvmap(n):
+        in_axes = [None] * ndim
+        in_axes[-n] = 0
+        return (
+            jax.vmap(lambda *x: x, in_axes=in_axes)
+            if n == 1
+            else jax.vmap(nvmap(n - 1), in_axes=in_axes)
+        )
+
+    return nvmap(ndim)
+
+
 @ft.partial(jax.profiler.annotate_function, name="general_product")
 def general_product(*args: jax.Array):
     """Equivalent to tuple(zip(*itertools.product(*args)))` for arrays
@@ -247,17 +263,7 @@ def general_product(*args: jax.Array):
     )
 
     """
-
-    def nvmap(n):
-        in_axes = [None] * len(args)
-        in_axes[-n] = 0
-        return (
-            jax.vmap(lambda *x: x, in_axes=in_axes)
-            if n == 1
-            else jax.vmap(nvmap(n - 1), in_axes=in_axes)
-        )
-
-    return nvmap(len(args))(*args)
+    return recursive_vmap(ndim=len(args))(*args)
 
 
 def _index_from_view(

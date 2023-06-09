@@ -1,10 +1,24 @@
 from __future__ import annotations
 
+import os
+
+import pytest
+
+os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count=256"
+
+# trunk-ignore(flake8/E402)
 import jax
+
+# trunk-ignore(flake8/E402)
 import jax.numpy as jnp
+
+# trunk-ignore(flake8/E402)
 import numpy as np
+
+# trunk-ignore(flake8/E402)
 from numpy.testing import assert_allclose
 
+# trunk-ignore(flake8/E402)
 import kernex as kex
 
 # # helper function to construct nd arrays
@@ -186,9 +200,15 @@ def test_linear_convection():
     assert_allclose(kex_solution, fdm_solution.T, atol=1e-3)
 
 
-def test_mesh():
+@pytest.mark.parametrize("map_kind", ["vmap", "lmap", "pmap"])
+def test_mesh(map_kind):
 
-    Mesh = kex.kmap(kernel_size=(1,), relative=True, padding="same")
+    Mesh = kex.kmap(
+        kernel_size=(1,),
+        relative=True,
+        padding="same",
+        map_kind=map_kind,
+    )
 
     Mesh[0] = lambda x: x[0] * 10
     Mesh[1] = lambda x: x[0] * -10
@@ -251,9 +271,15 @@ def test_lax_scan_with_kscan():
     )
 
 
-def test_lax_scan_with_kmap():
+@pytest.mark.parametrize("map_kind", ["vmap", "lmap", "pmap"])
+def test_lax_scan_with_kmap(map_kind):
     A = jnp.ones([10])
-    F = kex.kmap(kernel_size=(1,), relative=True, padding="same")
+    F = kex.kmap(
+        kernel_size=(1,),
+        relative=True,
+        padding="same",
+        map_kind=map_kind,
+    )
     F[1:-1] = lambda x: x[0] + 1
     F[0] = F[-1] = lambda x: x[0]
 
@@ -266,7 +292,12 @@ def test_lax_scan_with_kmap():
     np.testing.assert_allclose(u, np.array([1, 10, 10, 10, 10, 10, 10, 10, 10, 1]))
 
     A = jnp.ones([10])
-    F = kex.kmap(kernel_size=(3,), relative=True, padding="same")
+    F = kex.kmap(
+        kernel_size=(3,),
+        relative=True,
+        padding="same",
+        map_kind=map_kind,
+    )
     F[1:-1] = lambda x: x[0] + x[-1] + x[1]
     F[0] = F[-1] = lambda x: x[0]
 
@@ -281,7 +312,8 @@ def test_lax_scan_with_kmap():
     np.testing.assert_allclose(u, jnp.array([1.0, 7.0, 9, 9, 9, 9, 9, 9, 7, 1.0]))
 
 
-def test_conv2d():
+@pytest.mark.parametrize("map_kind", ["vmap", "lmap", "pmap"])
+def test_conv2d(map_kind):
     C, H = 3, 16
 
     @jax.jit
@@ -295,7 +327,12 @@ def test_conv2d():
         )[0]
 
     @jax.jit
-    @kex.kmap(kernel_size=(C, 3, 3), padding=("valid", "same", "same"), relative=False)
+    @kex.kmap(
+        kernel_size=(C, 3, 3),
+        padding=("valid", "same", "same"),
+        relative=False,
+        map_kind=map_kind,
+    )
     def kex_conv2d(x, w):
         return jnp.sum(x * w)
 

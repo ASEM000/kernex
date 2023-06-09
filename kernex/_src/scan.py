@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 import functools as ft
-from typing import Callable
+from typing import Any, Callable, Literal
 
 import jax
 import jax.numpy as jnp
@@ -30,7 +30,10 @@ from kernex._src.utils import (
     _offset_to_padding,
     ix_,
     roll_view,
+    transform_func_map,
 )
+
+ScanKind = Literal["scan"]
 
 
 @ft.lru_cache(maxsize=None)
@@ -63,8 +66,12 @@ def kernel_scan(
     strides: tuple[int, ...],
     border: tuple[tuple[int, int], ...],
     relative: bool = False,
+    scan_kind: ScanKind = "scan",  # dummy to make signature consistent with kernel_map
+    scan_kwargs: dict[str, Any] | None = None,
 ):
 
+    scan_kwargs = scan_kwargs or {}
+    scan_transform = transform_func_map[scan_kind]
     pad_width = _calculate_pad_width(border)
     args = (shape, kernel_size, strides, border)
     views = _generate_views(*args)
@@ -81,7 +88,8 @@ def kernel_scan(
             index = _get_index_from_view(view, kernel_size)
             return result, result[index]
 
-        return lax.scan(scan_body, padded_array, views)[1].reshape(output_shape)
+        _, result = scan_transform(scan_body, padded_array, views, **scan_kwargs)
+        return result.reshape(output_shape)
 
     def multi_call_wrapper(array: jax.Array, *a, **k):
         padded_array = jnp.pad(array, pad_width)
@@ -98,7 +106,8 @@ def kernel_scan(
             result = result.reshape(padded_array.shape)
             return result, result[index]
 
-        return lax.scan(scan_body, padded_array, views)[1].reshape(output_shape)
+        _, result = scan_transform(scan_body, padded_array, views, **scan_kwargs)
+        return result.reshape(output_shape)
 
     return single_call_wrapper if len(func_map) == 1 else multi_call_wrapper
 
@@ -110,10 +119,20 @@ def offset_kernel_scan(
     strides: tuple[int, ...],
     offset: tuple[tuple[int, int], ...],
     relative: bool = False,
+    scan_kind: ScanKind = "scan",
+    scan_kwargs: dict[str, Any] | None = None,
 ):
-    offset = tuple(offset)
-    padding = _offset_to_padding(offset, kernel_size)
-    func = kernel_scan(func_map, shape, kernel_size, strides, padding, relative)
+
+    func = kernel_scan(
+        func_map=func_map,
+        shape=shape,
+        kernel_size=kernel_size,
+        strides=strides,
+        border=_offset_to_padding(tuple(offset), kernel_size),
+        relative=relative,
+        scan_kind=scan_kind,
+        scan_kwargs=scan_kwargs,
+    )
     set_indices = _get_set_indices(shape, strides, offset)
 
     def call(array, *a, **k):

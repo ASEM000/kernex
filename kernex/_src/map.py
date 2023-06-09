@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 import functools as ft
-from typing import Callable
+from typing import Any, Callable, Literal
 
 import jax
 import jax.numpy as jnp
@@ -30,7 +30,10 @@ from kernex._src.utils import (
     _offset_to_padding,
     ix_,
     roll_view,
+    transform_func_map,
 )
+
+MapKind = Literal["vmap", "lmap", "pmap"]
 
 
 @ft.lru_cache(maxsize=None)
@@ -59,8 +62,12 @@ def kernel_map(
     strides: tuple[int, ...],
     border: tuple[tuple[int, int], ...],
     relative: bool = False,
-):
+    map_kind: MapKind = "vmap",
+    map_kwargs: dict[str, Any] | None = None,
+) -> Callable:
 
+    map_kwargs = map_kwargs or {}
+    map_tranform = transform_func_map[map_kind]
     pad_width = _calculate_pad_width(border)
     args = (shape, kernel_size, strides, border)
     views = _generate_views(*args)
@@ -84,7 +91,7 @@ def kernel_map(
         def map_func(view):
             return reduced_func(view, padded_array)
 
-        result = jax.vmap(map_func)(views)
+        result = map_tranform(map_func, **map_kwargs)(views)
         return result.reshape(*output_shape, *result.shape[1:])
 
     def multi_call_wrapper(array: jax.Array, *a, **k):
@@ -107,7 +114,7 @@ def kernel_map(
             func_index = _key_search(key=tuple(index_), keys=slices)
             return lax.switch(func_index, reduced_funcs, view, padded_array)
 
-        result = jax.vmap(map_func)(views)
+        result = map_tranform(map_func, **map_kwargs)(views)
         func_shape = result.shape[1:]
         return result.reshape(*output_shape, *func_shape)
 
@@ -121,10 +128,20 @@ def offset_kernel_map(
     strides: tuple[int, ...],
     offset: tuple[tuple[int, int], ...],
     relative: bool = False,
+    map_kind: MapKind = "vmap",
+    map_kwargs: dict[str, Any] = None,
 ):
-    offset = tuple(offset)
-    padding = _offset_to_padding(offset, kernel_size)
-    func = kernel_map(func_map, shape, kernel_size, strides, padding, relative)
+
+    func = kernel_map(
+        func_map=func_map,
+        shape=shape,
+        kernel_size=kernel_size,
+        strides=strides,
+        border=_offset_to_padding(tuple(offset), kernel_size),
+        relative=relative,
+        map_kind=map_kind,
+        map_kwargs=map_kwargs,
+    )
     set_indices = _get_set_indices(shape, strides, offset)
 
     def call(array: jax.Array, *a, **k):

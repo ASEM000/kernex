@@ -15,13 +15,13 @@
 from __future__ import annotations
 
 import functools as ft
-from typing import Callable, Literal, Tuple, Union
+from typing import Any, Callable, Literal, Tuple, Union
 
 import jax
 import jax.tree_util as jtu
 
-from kernex._src.map import kernel_map, offset_kernel_map
-from kernex._src.scan import kernel_scan, offset_kernel_scan
+from kernex._src.map import MapKind, kernel_map, offset_kernel_map
+from kernex._src.scan import ScanKind, kernel_scan, offset_kernel_scan
 from kernex.interface.named_axis import named_axis_wrapper
 from kernex.interface.resolve_utils import (
     _normalize_slices,
@@ -54,6 +54,8 @@ class KernelInterface:
         use_offset: bool = False,
         named_axis: dict[int, str] | None = None,
         container: dict[Callable, slice | int] | None = None,
+        transform_kind: MapKind | ScanKind | None = None,
+        transform_kwargs: dict[str, Any] | None = None,
     ):
         self.kernel_size = kernel_size
         self.strides = strides
@@ -67,6 +69,8 @@ class KernelInterface:
             if self.use_offset
             else _resolve_padding_argument(border, self.kernel_size)
         )
+        self.transform_kind = transform_kind
+        self.transform_kwargs = transform_kwargs
 
     def __repr__(self) -> str:
         return (
@@ -118,6 +122,8 @@ class KernelInterface:
             self.strides,
             self.border,
             self.relative,
+            self.transform_kind,
+            self.transform_kwargs,
         )(array, *a, **k)
 
     def _wrap_decorator(self, func):
@@ -146,6 +152,8 @@ class KernelInterface:
                 self.strides,
                 self.border,
                 self.relative,
+                self.transform_kind,
+                self.transform_kwargs,
             )(array, *args, **kwargs)
 
         return call
@@ -172,6 +180,8 @@ class sscan(KernelInterface):
         offset: OffsetType = 0,
         relative: bool = False,
         named_axis: dict[int, str] | None = None,
+        scan_kind: ScanKind = "scan",
+        scan_kwargs: dict[str, Any] | None = None,
     ):
         """Applies a *scalar* function to a sliding window using `jax.lax.scan`.
 
@@ -192,6 +202,11 @@ class sscan(KernelInterface):
                 for example: {0: 'i', 1: 'j'}, then
                 this notation can be used in the kernel function e.g.:
                 `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
+            scan_kind: the kind of scan to be used. available options are:
+                jax.lax.scan under `scan`.
+            scan_kwargs: optional kwargs to be passed to the scan function.
+                for example, `scan_kwargs={'reverse': True}` will reverse the
+                application of the function.
 
         Example:
             >>> import jax
@@ -235,6 +250,8 @@ class sscan(KernelInterface):
             inplace=True,
             use_offset=True,
             named_axis=named_axis,
+            transform_kind="scan",
+            transform_kwargs=scan_kwargs,
         )
 
 
@@ -246,6 +263,8 @@ class smap(KernelInterface):
         offset: OffsetType = 0,
         relative: bool = False,
         named_axis: dict[int, str] = None,
+        map_kind: MapKind = "vmap",
+        map_kwargs: dict[str, Any] | None = None,
     ):
         """Applies a *scalar* function to a sliding window using `jax.vmap`.
 
@@ -266,6 +285,12 @@ class smap(KernelInterface):
                 for example: {0: 'i', 1: 'j'}, then
                 this notation can be used in the kernel function e.g.:
                 `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
+            map_kind: the kind of map to be used. available options are:
+                jax.vmap under `vmap`, jax.lax.map under `map`, and jax.lax.pmap
+                under `pmap`.
+            map_kwargs: optional kwargs to be passed to the map function.
+                for example, `map_kwargs={'axis_name': 'i'}` will apply the
+                function along the axis named `i` for `pmap`.
 
         Example:
             >>> import jax
@@ -311,6 +336,8 @@ class smap(KernelInterface):
             inplace=False,
             use_offset=True,
             named_axis=named_axis,
+            transform_kind=map_kind,
+            transform_kwargs=map_kwargs,
         )
 
 
@@ -322,6 +349,8 @@ class kscan(KernelInterface):
         padding: BorderType = 0,
         relative: bool = False,
         named_axis: dict[int, str] = None,
+        scan_kind: ScanKind = "scan",
+        scan_kwargs: dict[str, Any] | None = None,
     ):
         """Apply a function to a sliding window of the input array sequentially.
 
@@ -335,6 +364,11 @@ class kscan(KernelInterface):
                 for example: {0: 'i', 1: 'j'}, then
                 this notation can be used in the kernel function e.g.:
                 `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
+            scan_kind: the kind of scan to be used. available options are:
+                jax.lax.scan under `scan`.
+            scan_kwargs: optional kwargs to be passed to the scan function.
+                for example, `scan_kwargs={'reverse': True}` will reverse the
+                application of the function.
 
         Returns:
             A function that takes an array as input and returns the result of
@@ -365,6 +399,8 @@ class kscan(KernelInterface):
             inplace=True,
             use_offset=False,
             named_axis=named_axis,
+            transform_kind=scan_kind,
+            transform_kwargs=scan_kwargs,
         )
 
 
@@ -376,6 +412,8 @@ class kmap(KernelInterface):
         padding: BorderType = 0,
         relative: bool = False,
         named_axis: dict[int, str] = None,
+        map_kind: MapKind = "vmap",
+        map_kwargs: dict = None,
     ):
         """Apply a function to a sliding window of the input array in parallel.
 
@@ -389,6 +427,12 @@ class kmap(KernelInterface):
                 for example: {0: 'i', 1: 'j'}, then
                 this notation can be used in the kernel function e.g.:
                 `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
+            map_kind: the kind of map to be used. available options are:
+                jax.vmap under `vmap`, jax.lax.map under `map`, and jax.lax.pmap
+                under `pmap`.
+            map_kwargs: optional kwargs to be passed to the map function.
+                for example, `map_kwargs={'axis_name': 'i'}` will apply the
+                function along the axis named `i` for `pmap`.
 
         Returns:
             A function that takes an array as input and applies the kernel
@@ -419,4 +463,6 @@ class kmap(KernelInterface):
             inplace=False,
             use_offset=False,
             named_axis=named_axis,
+            transform_kind=map_kind,
+            transform_kwargs=map_kwargs,
         )

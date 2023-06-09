@@ -23,8 +23,14 @@ import numpy as np
 from jax import lax
 from jax.util import safe_zip
 
+transform_func_map = {
+    "vmap": jax.vmap,
+    "lmap": lambda func, **k: (lambda xs: jax.lax.map(func, xs, **k)),
+    "pmap": jax.pmap,
+    "scan": jax.lax.scan,
+}
 
-@ft.lru_cache(maxsize=128)
+
 def _calculate_pad_width(border: tuple[tuple[int, int], ...]):
     """Calcuate the positive padding from border value
 
@@ -56,7 +62,6 @@ def _get_index_from_view(
     )
 
 
-@ft.lru_cache(maxsize=128)
 def _generate_views(
     shape: tuple[int, ...],
     kernel_size: tuple[int, ...],

@@ -28,6 +28,7 @@ from kernex._src.utils import (
     _get_set_indices,
     _key_search,
     _offset_to_padding,
+    gather_kwargs,
     ix_,
     roll_view,
     transform_func_map,
@@ -41,14 +42,16 @@ def _transform_map_func(func: Callable, relative: bool) -> Callable:
     # transform a function that takes array to
     # a function that takes a view and an array
     def relative_wrapper(*a, **k):
-        def map_func(view: jax.Array, array: jax.Array):
-            return func(roll_view(array[ix_(*view)]), *a, **k)
+        def map_func(view: tuple[jax.Array, ...], array: jax.Array):
+            patch = array.at[ix_(*view)].get(**gather_kwargs)
+            return func(roll_view(patch), *a, **k)
 
         return map_func
 
     def absolute_wrapper(*a, **k):
-        def map_func(view: jax.Array, array: jax.Array):
-            return func(array[ix_(*view)], *a, **k)
+        def map_func(view: tuple[jax.Array, ...], array: jax.Array):
+            patch = array.at[ix_(*view)].get(**gather_kwargs)
+            return func(patch, *a, **k)
 
         return map_func
 
@@ -148,6 +151,6 @@ def offset_kernel_map(
         result = func(array, *a, **k)
         if result.shape > array.shape:
             raise ValueError(f"Output must be scalar. Foud {result.shape=}")
-        return array.at[ix_(*set_indices)].set(result)
+        return array.at[ix_(*set_indices)].set(result, **gather_kwargs)
 
     return call

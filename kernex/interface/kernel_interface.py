@@ -250,7 +250,7 @@ class sscan(KernelInterface):
             inplace=True,
             use_offset=True,
             named_axis=named_axis,
-            transform_kind="scan",
+            transform_kind=scan_kind,
             transform_kwargs=scan_kwargs,
         )
 
@@ -286,8 +286,7 @@ class smap(KernelInterface):
                 this notation can be used in the kernel function e.g.:
                 `f = lambda x: x['i+1','j+1']` is equivalent to lambda x: x[1,1]
             map_kind: the kind of map to be used. available options are:
-                jax.vmap under `vmap`, jax.lax.map under `map`, and jax.lax.pmap
-                under `pmap`.
+                `vmap` for jax.vmap, `lmap`for jax.lax.map, and `pmap`for jax.map
             map_kwargs: optional kwargs to be passed to the map function.
                 for example, `map_kwargs={'axis_name': 'i'}` will apply the
                 function along the axis named `i` for `pmap`.

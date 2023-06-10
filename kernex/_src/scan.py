@@ -28,6 +28,7 @@ from kernex._src.utils import (
     _get_set_indices,
     _key_search,
     _offset_to_padding,
+    gather_kwargs,
     ix_,
     roll_view,
     transform_func_map,
@@ -43,16 +44,18 @@ def _transform_scan_func(
     relative: bool,
 ) -> Callable:
     def relative_wrapper(*a, **k):
-        def scan_func(view: jax.Array, array: jax.Array):
+        def scan_func(view: tuple[jax.Array, ...], array: jax.Array):
             index = _get_index_from_view(view, kernel_size)
-            return array.at[index].set(func(roll_view(array[ix_(*view)]), *a, **k))
+            patch = array.at[ix_(*view)].get(**gather_kwargs)
+            return array.at[index].set(func(roll_view(patch), *a, **k))
 
         return scan_func
 
     def absolute_wrapper(*a, **k):
-        def scan_func(view: jax.Array, array: jax.Array):
+        def scan_func(view: tuple[jax.Array, ...], array: jax.Array):
             index = _get_index_from_view(view, kernel_size)
-            return array.at[index].set(func(array[ix_(*view)], *a, **k))
+            patch = array.at[ix_(*view)].get(**gather_kwargs)
+            return array.at[index].set(func(patch, *a, **k))
 
         return scan_func
 
@@ -139,6 +142,6 @@ def offset_kernel_scan(
         result = func(array, *a, **k)
         if result.shape > array.shape:
             raise ValueError("scan operation output must be scalar.")
-        return array.at[ix_(*set_indices)].set(result)
+        return array.at[ix_(*set_indices)].set(result, **gather_kwargs)
 
     return call

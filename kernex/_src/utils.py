@@ -30,6 +30,12 @@ transform_func_map = {
     "scan": jax.lax.scan,
 }
 
+gather_kwargs = {
+    "mode": "promise_in_bounds",
+    "indices_are_sorted": True,
+    "unique_indices": True,
+}
+
 
 def _calculate_pad_width(border: tuple[tuple[int, int], ...]):
     """Calcuate the positive padding from border value

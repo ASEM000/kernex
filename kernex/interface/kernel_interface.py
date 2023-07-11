@@ -32,10 +32,10 @@ from kernex.interface.resolve_utils import (
 )
 
 BorderType = Union[
-    int,
-    Tuple[int, ...],
-    Tuple[Tuple[int, int], ...],
-    Literal["valid", "same", "SAME", "VALID"],
+    int,  # single int to pad all axes before and after the array
+    Tuple[int, ...],  # tuple of ints to pad before and after each axis
+    Tuple[Tuple[int, int], ...],  # tuple of tuples to pad before and after each axis
+    Literal["valid", "same", "SAME", "VALID"],  # string to use a predefined padding
 ]
 
 StridesType = Union[Tuple[int, ...], int]
@@ -56,6 +56,7 @@ class KernelInterface:
         container: dict[Callable, slice | int] | None = None,
         transform_kind: MapKind | ScanKind | None = None,
         transform_kwargs: dict[str, Any] | None = None,
+        border_kwargs: dict[str, Any] | None = None,
     ):
         self.kernel_size = kernel_size
         self.strides = strides
@@ -71,6 +72,7 @@ class KernelInterface:
         )
         self.transform_kind = transform_kind
         self.transform_kwargs = transform_kwargs
+        self.border_kwargs = border_kwargs
 
     def __repr__(self) -> str:
         return (
@@ -124,6 +126,7 @@ class KernelInterface:
             self.relative,
             self.transform_kind,
             self.transform_kwargs,
+            self.border_kwargs,
         )(array, *a, **k)
 
     def _wrap_decorator(self, func):
@@ -154,6 +157,7 @@ class KernelInterface:
                 self.relative,
                 self.transform_kind,
                 self.transform_kwargs,
+                self.border_kwargs,
             )(array, *args, **kwargs)
 
         return call
@@ -252,6 +256,7 @@ class sscan(KernelInterface):
             named_axis=named_axis,
             transform_kind=scan_kind,
             transform_kwargs=scan_kwargs,
+            border_kwargs=None,
         )
 
 
@@ -337,6 +342,7 @@ class smap(KernelInterface):
             named_axis=named_axis,
             transform_kind=map_kind,
             transform_kwargs=map_kwargs,
+            border_kwargs=None,
         )
 
 
@@ -350,6 +356,7 @@ class kscan(KernelInterface):
         named_axis: dict[int, str] = None,
         scan_kind: ScanKind = "scan",
         scan_kwargs: dict[str, Any] | None = None,
+        padding_kwargs: dict[str, Any] | None = None,
     ):
         """Apply a function to a sliding window of the input array sequentially.
 
@@ -368,6 +375,9 @@ class kscan(KernelInterface):
             scan_kwargs: optional kwargs to be passed to the scan function.
                 for example, `scan_kwargs={'reverse': True}` will reverse the
                 application of the function.
+            padding_kwargs: optional kwargs to be passed to the padding function.
+                for example, `padding_kwargs=dict(constant_values=10)` will pad
+                the input array with 10 for same padding.
 
         Returns:
             A function that takes an array as input and returns the result of
@@ -400,6 +410,7 @@ class kscan(KernelInterface):
             named_axis=named_axis,
             transform_kind=scan_kind,
             transform_kwargs=scan_kwargs,
+            border_kwargs=padding_kwargs,
         )
 
 
@@ -413,6 +424,7 @@ class kmap(KernelInterface):
         named_axis: dict[int, str] = None,
         map_kind: MapKind = "vmap",
         map_kwargs: dict = None,
+        padding_kwargs: dict = None,
     ):
         """Apply a function to a sliding window of the input array in parallel.
 
@@ -432,6 +444,9 @@ class kmap(KernelInterface):
             map_kwargs: optional kwargs to be passed to the map function.
                 for example, `map_kwargs={'axis_name': 'i'}` will apply the
                 function along the axis named `i` for `pmap`.
+            padding_kwargs: optional kwargs to be passed to the padding function.
+                for example, `padding_kwargs=dict(constant_values=10)` will pad
+                the input array with 10 for same padding.
 
         Returns:
             A function that takes an array as input and applies the kernel
@@ -464,4 +479,5 @@ class kmap(KernelInterface):
             named_axis=named_axis,
             transform_kind=map_kind,
             transform_kwargs=map_kwargs,
+            border_kwargs=padding_kwargs,
         )

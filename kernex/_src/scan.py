@@ -71,12 +71,9 @@ def kernel_scan(
     relative: bool = False,
     scan_kind: ScanKind = "scan",  # dummy to make signature consistent with kernel_map
     scan_kwargs: dict[str, Any] | None = None,
-    padding_kwargs: dict[str, Any] | None = None,
 ):
 
     scan_kwargs = scan_kwargs or {}
-    padding_kwargs = padding_kwargs or {}
-    padding_kwargs.pop("pad_width", None)
     scan_transform = transform_func_map[scan_kind]
     pad_width = _calculate_pad_width(border)
     args = (shape, kernel_size, strides, border)
@@ -85,7 +82,7 @@ def kernel_scan(
     slices = tuple(func_map.values())
 
     def single_call_wrapper(array: jax.Array, *a, **k):
-        padded_array = jnp.pad(array, pad_width=pad_width, **padding_kwargs)
+        padded_array = jnp.pad(array, pad_width)
         func0 = next(iter(func_map))
         reduced_func = _transform_scan_func(func0, kernel_size, relative)(*a, **k)
 
@@ -98,7 +95,7 @@ def kernel_scan(
         return result.reshape(output_shape)
 
     def multi_call_wrapper(array: jax.Array, *a, **k):
-        padded_array = jnp.pad(array, pad_width=pad_width, **padding_kwargs)
+        padded_array = jnp.pad(array, pad_width)
 
         reduced_funcs = tuple(
             _transform_scan_func(func, kernel_size, relative)(*a, **k)
@@ -127,7 +124,6 @@ def offset_kernel_scan(
     relative: bool = False,
     scan_kind: ScanKind = "scan",
     scan_kwargs: dict[str, Any] | None = None,
-    offset_kwargs: dict[str, Any] | None = None,
 ):
 
     func = kernel_scan(
@@ -139,7 +135,6 @@ def offset_kernel_scan(
         relative=relative,
         scan_kind=scan_kind,
         scan_kwargs=scan_kwargs,
-        padding_kwargs=offset_kwargs,
     )
     set_indices = _get_set_indices(shape, strides, offset)
 

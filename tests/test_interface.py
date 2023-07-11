@@ -346,21 +346,3 @@ def test_conv2d(map_kind):
     pred_grad = jax.grad(lambda w: jnp.sum(kex_conv2d(x, w)))(w)
 
     np.testing.assert_allclose(true_grad[0], pred_grad, atol=1e-3)
-
-
-def test_padding_kwargs():
-    @kex.kmap(
-        kernel_size=(3,),
-        padding=("same"),
-        relative=False,
-        padding_kwargs=dict(constant_values=10),
-    )
-    def f(x):
-        return x
-
-    x = jnp.array([1, 2, 3, 4, 5])
-
-    np.testing.assert_allclose(
-        f(x),
-        np.array([[10, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 10]]),
-    )

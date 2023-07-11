@@ -67,13 +67,9 @@ def kernel_map(
     relative: bool = False,
     map_kind: MapKind = "vmap",
     map_kwargs: dict[str, Any] | None = None,
-    padding_kwargs: dict[str, Any] | None = None,
 ) -> Callable:
 
     map_kwargs = map_kwargs or {}
-    padding_kwargs = padding_kwargs or {}
-    padding_kwargs.pop("pad_width", None)  # handled by border
-
     map_tranform = transform_func_map[map_kind]
     pad_width = _calculate_pad_width(border)
     args = (shape, kernel_size, strides, border)
@@ -86,7 +82,7 @@ def kernel_map(
     slices = tuple(func_map.values())
 
     def single_call_wrapper(array: jax.Array, *a, **k):
-        padded_array = jnp.pad(array, pad_width=pad_width, **padding_kwargs)
+        padded_array = jnp.pad(array, pad_width)
 
         # convert the function to a callable that takes a view and an array
         # and returns the result of the function applied to the view
@@ -102,7 +98,7 @@ def kernel_map(
         return result.reshape(*output_shape, *result.shape[1:])
 
     def multi_call_wrapper(array: jax.Array, *a, **k):
-        padded_array = jnp.pad(array, pad_width=pad_width, **padding_kwargs)
+        padded_array = jnp.pad(array, pad_width)
         # convert the functions to a callable that takes a view and an array
         # and returns the result of the function applied to the view
         # the result is a 1D array of the same length as the number of views
@@ -137,7 +133,6 @@ def offset_kernel_map(
     relative: bool = False,
     map_kind: MapKind = "vmap",
     map_kwargs: dict[str, Any] = None,
-    offset_kwargs: dict[str, Any] = None,
 ):
 
     func = kernel_map(
@@ -149,7 +144,6 @@ def offset_kernel_map(
         relative=relative,
         map_kind=map_kind,
         map_kwargs=map_kwargs,
-        padding_kwargs=offset_kwargs,
     )
     set_indices = _get_set_indices(shape, strides, offset)
 

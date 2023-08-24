@@ -13,7 +13,7 @@
 ![Tests](https://github.com/ASEM000/kernex/actions/workflows/tests.yml/badge.svg)
 ![pyver](https://img.shields.io/badge/python-3.8%203.8%203.9%203.11-red)
 ![codestyle](https://img.shields.io/badge/codestyle-black-black)
-[![Downloads](https://pepy.tech/badge/kernex)](https://pepy.tech/project/kernex)
+[![Downloads](https://static.pepy.tech/badge/kernex)](https://pepy.tech/project/kernex)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/14UEqKzIyZsDzQ9IMeanvztXxbbbatTYV?usp=sharing)
 [![codecov](https://codecov.io/gh/ASEM000/kernex/branch/main/graph/badge.svg?token=3KLL24Z94I)](https://codecov.io/gh/ASEM000/kernex)
 [![DOI](https://zenodo.org/badge/512400616.svg)](https://zenodo.org/badge/latestdoi/512400616)

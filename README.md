@@ -30,8 +30,6 @@ pip install kernex
 
 Kernex extends `jax.vmap`/`jax.lax.map`/`jax.pmap` with `kmap` and `jax.lax.scan` with `kscan` for general stencil computations.
 
-The prime motivation for this package is to blend the solution process of PDEs into a NN setting.
-
 ## ⏩ Quick Example <a id="QuickExample">
 
 <div align="center">

@@ -303,7 +303,6 @@ def gaussian_blur(image, sigma, kernel_size):
 <details > <summary>6️⃣ Depthwise convolution </summary>
      
 ```python
-
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -311,10 +310,10 @@ import kernex as kex
 @jax.jit
 @jax.vmap
 @kex.kmap(
-kernel_size= (3,3),
-padding = ('same','same'))
-def kernex_depthwise_conv2d(x,w): # Channel-first depthwise convolution # jax.debug.print("x=\n{a}\nw=\n{b} \n\n",a=x, b=w)
-return jnp.sum(x\*w)
+    kernel_size= (3,3),
+    padding = ('same','same'))
+def kernex_depthwise_conv2d(x,w): 
+    return jnp.sum(x*w)
 
 h,w,c = 5,5,2
 k=3
@@ -326,22 +325,14 @@ print(kernex_depthwise_conv2d(x,w))
 
 </details>
 
-<details> <summary>7️⃣ Maxpooling2D and Averagepooling2D </summary>
+<details> <summary>7️⃣ Average pooling 2D </summary>
 
 ```python
-
-@jax.vmap # vectorize over the channel dimension
-@kex.kmap(kernel_size=(3,3), strides=(2,2))
-def maxpool_2d(x):
-    # define the kernel for the Maxpool operation over the spatial dimensions
-    return jnp.max(x)
-
 @jax.vmap # vectorize over the channel dimension
 @kex.kmap(kernel_size=(3,3), strides=(2,2))
 def avgpool_2d(x):
     # define the kernel for the Average pool operation over the spatial dimensions
     return jnp.mean(x)
-
 ````
 
 </details>

@@ -6,7 +6,6 @@
 [**Installation**](#Installation)
 |[**Description**](#Description)
 |[**Quick example**](#QuickExample)
-|[**Function mesh**](#FunctionMesh)
 |[**More Examples**](#MoreExamples)
 |[**Benchmarking**](#Benchmarking)
 
@@ -41,7 +40,6 @@ Kernex extends `jax.vmap`/`jax.lax.map`/`jax.pmap` with `kmap` and `jax.lax.scan
 <td>
 
 ```python
-
 import kernex as kex
 import jax.numpy as jnp
 
@@ -49,15 +47,16 @@ import jax.numpy as jnp
 def sum_all(x):
     return jnp.sum(x)
 
->>> x = jnp.array([1,2,3,4,5])
->>> print(sum_all(x))
-[ 6  9 12]
+x = jnp.array([1,2,3,4,5])
+print(sum_all(x))
+# [ 6  9 12]
 ```
 
 </td>
 <td>
     
 ```python
+
 import kernex as kex 
 import jax.numpy as jnp
 
@@ -65,9 +64,9 @@ import jax.numpy as jnp
 def sum_all(x):
 return jnp.sum(x)
 
-> > > x = jnp.array([1,2,3,4,5])
-> > > print(sum_all(x))
-> > > [ 6 13 22]
+x = jnp.array([1,2,3,4,5])
+print(sum_all(x))
+# [ 6 13 22]
 
 ````
 </td>
@@ -91,103 +90,7 @@ the first three rows represents the three sequential steps used to get the solut
 </div>
 
 
-## 🕸️ Function mesh concept <a id="FunctionMesh">
-<details>
 
-The objective is to apply `f(x) = x^2  at index=0  and f(x) = x^3 at  index=(1,10)`
-
-To achieve the following operation with `jax.lax.switch` , we need a list of 10 functions correspoing to each cell of the example array.
-For this reason , kernex adopts a modified version of `jax.lax.switch` to reduce the number of branches required.
-
-```python
-
-# function applies x^2 at boundaries, and applies x^3 to to the interior
-
-        ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
-  f =   │ x^2 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │ x^3 │
-        └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-
-        ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
- f(     │  1  │  2  │  3  │  4  │  5  │  6  │  7  │  8  │  9  │ 10  │ ) =
-        └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-        ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
-        │  1  │  8  │  27 │  64 │ 125 │ 216 │ 343 │ 512 │ 729 │1000 │
-        └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-
-# Gradient of this function
-        ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
-df/dx = │ 2x  │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │3x^2 │
-        └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-
-
-        ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
- df/dx( │  1  │  2  │  3  │  4  │  5  │  6  │  7  │  8  │  9  │ 10  │ ) =
-        └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-        ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
-        │  2  │  12 │ 27  │  48 │ 75  │ 108 │ 147 │ 192 │ 243 │ 300 │
-        └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-````
-
-<div align ="center">
-<table>
-<tr>
-<td> Function mesh </td> <td> Array equivalent </td>
-</tr>
-<tr>
-<td>
-
-```python
-F = kex.kmap(kernel_size=(1,))
-F[0] = lambda x:x[0]**2
-F[1:] = lambda x:x[0]**3
-
-
-
-
-
-array = jnp.arange(1,11).astype('float32')
-print(F(array))
->>> [1., 8., 27., 64., 125.,
-... 216., 343., 512., 729., 1000.]
-
-print(jax.grad(lambda x:jnp.sum(F(x)))(array))
->>> [2.,12.,27.,48.,75.,
-... 108.,147.,192.,243.,300.]
-
-```
-
-</td>
-<td>
-
-```python
-
-def F(x):
-    f1 = lambda x:x**2
-    f2 = lambda x:x**3
-    x = x.at[0].set(f1(x[0]))
-    x = x.at[1:].set(f2(x[1:]))
-    return x
-
-array = jnp.arange(1,11).astype('float32')
-print(F(array))
->>> [1., 8., 27., 64., 125.,
-... 216., 343., 512., 729., 1000.]
-
-print(jax.grad(lambda x: jnp.sum(F(x)))(array))
->>> [2.,12.,27.,48.,75.,
-... 108.,147.,192.,243.,300.]
-```
-
-</td>
-</tr>
-</table>
-
-Additionally , we can combine the function mesh concept with stencil computation for scientific computing.
-See Linear convection in **More examples** section
-
-</div>
-
-</details>
 
 ## 🔢 More examples<a id="MoreExamples"></a>
 
@@ -195,7 +98,6 @@ See Linear convection in **More examples** section
 <summary>1️⃣ Convolution operation</summary>
 
 ```python
-
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -230,17 +132,15 @@ def laplacian(x):
              1*x[0,-1]  +-4*x[0,0]   + 1*x[0,1] +
              0*x[-1,-1] + 1*x[-1,0]  + 0*x[-1,1] )
 
-# apply laplacian
->>> print(laplacian(jnp.ones([10,10])))
-DeviceArray(
-    [[0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0.]], dtype=float32)
+print(laplacian(jnp.ones([10,10])))
+# [[0., 0., 0., 0., 0., 0., 0., 0.],
+#  [0., 0., 0., 0., 0., 0., 0., 0.],
+#  [0., 0., 0., 0., 0., 0., 0., 0.],
+#  [0., 0., 0., 0., 0., 0., 0., 0.],
+#  [0., 0., 0., 0., 0., 0., 0., 0.],
+#  [0., 0., 0., 0., 0., 0., 0., 0.],
+#  [0., 0., 0., 0., 0., 0., 0., 0.],
+#  [0., 0., 0., 0., 0., 0., 0., 0.]]
 
 ```
 
@@ -271,21 +171,20 @@ def get_3x3_patches(x):
     return x
 
 mat = jnp.arange(1,26).reshape(5,5)
->>> print(mat)
-[[ 1  2  3  4  5]
- [ 6  7  8  9 10]
- [11 12 13 14 15]
- [16 17 18 19 20]
- [21 22 23 24 25]]
+print(mat)
+# [[ 1  2  3  4  5]
+#  [ 6  7  8  9 10]
+#  [11 12 13 14 15]
+#  [16 17 18 19 20]
+#  [21 22 23 24 25]]
 
 
 # get the view at array index = (0,0)
->>> print(get_3x3_patches(mat)[0,0])
-[[0 0 0]
- [0 1 2]
- [0 6 7]]
+print(get_3x3_patches(mat)[0,0])
+# [[0 0 0]
+#  [0 1 2]
+#  [0 6 7]]
 ```
-
 </details>
 
 <details>
@@ -315,7 +214,6 @@ $\Large u_i^{n} = u_i^{n-1} - c \frac{\Delta t}{\Delta x}(u_i^{n-1}-u_{i-1}^{n-1
 </div>
 
 ```python
-
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -334,9 +232,10 @@ c = 0.5
 F = kernex.kscan(
         kernel_size = (3,3),
         padding = ((1,1),(1,1)),
-        named_axis={0:'n',1:'i'},  # n for time axis , i for spatial axis (optional naming)
+        # n for time axis , i for spatial axis (optional naming)
+        named_axis={0:'n',1:'i'},  
         relative=True
-        )
+    )
 
 
 # boundary condtion as a function
@@ -422,8 +321,7 @@ k=3
 
 x = jnp.arange(1,h*w*c+1).reshape(c,h,w)
 w = jnp.arange(1,k*k*c+1).reshape(c,k,k)
-print(kernex_depthwise_conv2d(x,w))</summary>
-
+print(kernex_depthwise_conv2d(x,w))
 ````
 
 </details>
@@ -431,6 +329,7 @@ print(kernex_depthwise_conv2d(x,w))</summary>
 <details> <summary>7️⃣ Maxpooling2D and Averagepooling2D </summary>
 
 ```python
+
 @jax.vmap # vectorize over the channel dimension
 @kex.kmap(kernel_size=(3,3), strides=(2,2))
 def maxpool_2d(x):
@@ -442,6 +341,7 @@ def maxpool_2d(x):
 def avgpool_2d(x):
     # define the kernel for the Average pool operation over the spatial dimensions
     return jnp.mean(x)
+
 ````
 
 </details>

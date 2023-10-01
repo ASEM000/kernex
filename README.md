@@ -190,8 +190,6 @@ print(get_3x3_patches(mat)[0,0])
 <details>
 <summary>4️⃣ Linear convection </summary>
 
-$\Large {\partial u \over \partial t} + c {\partial u \over \partial x} = 0$ <br> <br>
-$\Large u_i^{n} = u_i^{n-1} - c \frac{\Delta t}{\Delta x}(u_i^{n-1}-u_{i-1}^{n-1})$
 
 <div align ="center">
 <table>
@@ -214,6 +212,7 @@ $\Large u_i^{n} = u_i^{n-1} - c \frac{\Delta t}{\Delta x}(u_i^{n-1}-u_{i-1}^{n-1
 </div>
 
 ```python
+
 import jax
 import jax.numpy as jnp
 import kernex as kex
@@ -269,9 +268,10 @@ kx_solution = F(jnp.array(u))
 plt.figure(figsize=(20,7))
 for line in kx_solution[::20]:
     plt.plot(jnp.linspace(0,xmax,nx),line)
+
 ```
 
-![image](assets/linear_convection.svg)
+<img src="assets/linear_convection.svg">
 
 </details>
 

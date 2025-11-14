@@ -21,7 +21,6 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import lax
-from jax.util import safe_zip
 
 transform_func_map = {
     "vmap": jax.vmap,
@@ -35,6 +34,10 @@ gather_kwargs = {
     "indices_are_sorted": True,
     "unique_indices": True,
 }
+
+
+def safe_zip(*args):
+    return list(zip(*args, strict=True))
 
 
 def _calculate_pad_width(border: tuple[tuple[int, int], ...]):

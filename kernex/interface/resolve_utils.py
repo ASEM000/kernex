@@ -19,7 +19,8 @@ from typing import Any, Callable
 
 import jax
 import jax.tree_util as jtu
-from jax.util import safe_zip
+
+from kernex._src.utils import safe_zip
 
 
 def _resolve_padding_argument(
